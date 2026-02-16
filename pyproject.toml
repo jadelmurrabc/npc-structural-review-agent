@@ -1,0 +1,21 @@
+[project]
+name = "npc-structural-review-agent"
+version = "0.1.0"
+description = "NPC Structural Checklist Review Agent (Sub-Agent 1)"
+requires-python = ">= 3.10"
+dependencies = [
+    "google-adk",
+    "google-cloud-aiplatform",
+    "google-genai",
+    "pymupdf",
+    "python-dotenv",
+    "pydantic>=2.0.0",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["base_agent*"]

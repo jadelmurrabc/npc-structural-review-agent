@@ -1,0 +1,256 @@
+{
+  "classification": "entity",
+  "components": [
+    {
+      "id": 1,
+      "name": "Baselines, Benchmarks, & Trends",
+      "sub_components": [
+        {
+          "id": "1.1",
+          "name": "Diagnostic (SWOT, gap analysis, quantified baseline)",
+          "rubric": {
+            "0.0": "No diagnostic, SWOT, gap analysis, or baseline data is present in the document.",
+            "0.25": "Very high-level or vague mention of current state without structured analysis or data.",
+            "0.5": "Diagnostic exists (e.g., qualitative SWOT) but is incomplete \u2014 missing quantified baselines or gap analysis.",
+            "0.75": "Well-developed diagnostic with quantified baselines but minor gaps in depth or coverage.",
+            "1.0": "Comprehensive diagnostic with fully quantified baselines, structured SWOT, and detailed gap analysis."
+          }
+        },
+        {
+          "id": "1.2",
+          "name": "Benchmarks & Comparisons",
+          "rubric": {
+            "0.0": "No benchmarking or comparative analysis present.",
+            "0.25": "Vague mention of peer countries or comparators without any data or specifics.",
+            "0.5": "Some benchmarking present but limited in scope \u2014 few comparators or incomplete data.",
+            "0.75": "Good benchmarking with multiple comparators and data, minor gaps in lessons learned.",
+            "1.0": "Comprehensive benchmarking with regional/international comparators, detailed data, and documented lessons learned."
+          }
+        },
+        {
+          "id": "1.3",
+          "name": "Trends",
+          "rubric": {
+            "0.0": "No trends analysis present.",
+            "0.25": "Brief or vague mention of trends without analysis or linkage to strategy.",
+            "0.5": "Some trends identified but analysis is surface-level or not linked to strategic direction.",
+            "0.75": "Good trends analysis covering global/regional trends with mostly clear linkage to strategy.",
+            "1.0": "Comprehensive trends analysis (global, regional, sectoral) fully integrated into strategic direction."
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Vision, Mission & Values",
+      "sub_components": [
+        {
+          "id": "2.1",
+          "name": "Vision",
+          "rubric": {
+            "0.0": "No vision statement present.",
+            "0.25": "Vision exists but is vague, generic, or not aligned with national direction.",
+            "0.5": "Vision is stated but lacks ambition, specificity, or clear national alignment.",
+            "0.75": "Clear and ambitious vision with good national alignment but minor clarity gaps.",
+            "1.0": "Clear, ambitious, measurable vision fully aligned with Qatar national direction (QNV 2030, NDS3)."
+          }
+        },
+        {
+          "id": "2.2",
+          "name": "Mission",
+          "rubric": {
+            "0.0": "No mission statement present.",
+            "0.25": "Mission exists but is vague or does not articulate purpose and scope.",
+            "0.5": "Mission is stated but incomplete \u2014 missing either purpose, scope, or target beneficiaries.",
+            "0.75": "Good mission statement with clear purpose and scope, minor gaps in specificity.",
+            "1.0": "Comprehensive mission clearly articulating purpose, scope, and target beneficiaries."
+          }
+        },
+        {
+          "id": "2.3",
+          "name": "Values",
+          "rubric": {
+            "0.0": "No values defined.",
+            "0.25": "Values mentioned but generic and not linked to entity/sector mandate.",
+            "0.5": "Values defined but only partially aligned with mandate or lacking operational relevance.",
+            "0.75": "Values well-defined and mostly aligned with mandate, minor gaps in operational linkage.",
+            "1.0": "Values clearly defined, fully aligned with mandate, and operationally relevant."
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Strategic Objectives & KPIs",
+      "sub_components": [
+        {
+          "id": "3.1",
+          "name": "Strategic Objectives / Pillars",
+          "rubric": {
+            "0.0": "No strategic objectives or pillars defined.",
+            "0.25": "Objectives mentioned but vague, not measurable, or poorly structured.",
+            "0.5": "Objectives defined but some lack measurability or clear linkage to vision.",
+            "0.75": "Well-defined objectives/pillars with mostly clear measurability, minor gaps.",
+            "1.0": "Comprehensive, measurable strategic objectives/pillars fully linked to vision and mission."
+          }
+        },
+        {
+          "id": "3.2",
+          "name": "KPI Definition",
+          "rubric": {
+            "0.0": "No KPIs defined.",
+            "0.25": "KPIs listed but without methodology, measurement cadence, or data source.",
+            "0.5": "KPIs defined with some methodology but missing cadence, data source, or calculation details.",
+            "0.75": "Good KPI definitions with methodology and cadence, minor gaps in data source or clarity.",
+            "1.0": "Comprehensive KPI definitions with full methodology, measurement cadence, data source, and calculation method."
+          }
+        },
+        {
+          "id": "3.3",
+          "name": "Baselines & Targets",
+          "rubric": {
+            "0.0": "No baselines or targets provided for KPIs.",
+            "0.25": "Some targets exist but no baselines, or baselines without targets.",
+            "0.5": "Partial baselines and targets \u2014 some KPIs covered, others missing.",
+            "0.75": "Most KPIs have baselines and targets, minor gaps in coverage or time-bounding.",
+            "1.0": "All KPIs have quantified baselines and time-bound targets with clear milestones."
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Governance Model",
+      "sub_components": [
+        {
+          "id": "4.1",
+          "name": "Internal Stakeholder Ecosystem",
+          "rubric": {
+            "0.0": "No internal governance structure described.",
+            "0.25": "Brief mention of governance without roles, committees, or decision-making structure.",
+            "0.5": "Some governance elements described but incomplete \u2014 missing roles or decision-making clarity.",
+            "0.75": "Good internal governance with committees and roles, minor gaps in decision-making flows.",
+            "1.0": "Comprehensive internal governance with clear committees, roles, responsibilities, and decision-making flows."
+          }
+        },
+        {
+          "id": "4.2",
+          "name": "External Stakeholder Ecosystem",
+          "rubric": {
+            "0.0": "No external stakeholders identified.",
+            "0.25": "External stakeholders briefly mentioned without roles or engagement model.",
+            "0.5": "Some external stakeholders mapped but roles or engagement mechanisms are incomplete.",
+            "0.75": "Good external stakeholder mapping with roles, minor gaps in engagement mechanisms.",
+            "1.0": "Comprehensive external stakeholder ecosystem with clear roles, responsibilities, and engagement model."
+          }
+        },
+        {
+          "id": "4.3",
+          "name": "Coordination & Interaction Mechanisms",
+          "rubric": {
+            "0.0": "No coordination mechanisms described.",
+            "0.25": "Vague mention of coordination without specific mechanisms or cadence.",
+            "0.5": "Some coordination mechanisms exist but lack detail on cadence, format, or accountability.",
+            "0.75": "Good coordination mechanisms with mostly clear cadence and format, minor gaps.",
+            "1.0": "Comprehensive coordination mechanisms with clear cadence, format, escalation paths, and accountability."
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Initiatives & Projects",
+      "sub_components": [
+        {
+          "id": "5.1",
+          "name": "Projects Derived From Initiatives",
+          "rubric": {
+            "0.0": "No initiatives or projects identified.",
+            "0.25": "Projects listed but not linked to strategic initiatives or objectives.",
+            "0.5": "Some projects derived from initiatives but linkage is incomplete or unclear.",
+            "0.75": "Good derivation of projects from initiatives with mostly clear linkage, minor gaps.",
+            "1.0": "All projects clearly derived from strategic initiatives with full traceability to objectives."
+          }
+        },
+        {
+          "id": "5.2",
+          "name": "Conditions/Games Linked To Objectives",
+          "rubric": {
+            "0.0": "No linkage between projects/conditions and strategic objectives.",
+            "0.25": "Vague or partial linkage \u2014 some projects connected, many orphaned.",
+            "0.5": "Moderate linkage \u2014 most projects connected but some lack clear objective mapping.",
+            "0.75": "Good linkage with most projects mapped to objectives, minor orphan projects.",
+            "1.0": "All projects and conditions explicitly mapped to strategic objectives with clear contribution logic."
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Project Description, Timeline, & Budgets",
+      "sub_components": [
+        {
+          "id": "6.1",
+          "name": "Project Description And Charters",
+          "rubric": {
+            "0.0": "No project descriptions or charters provided.",
+            "0.25": "Brief project descriptions without scope, deliverables, or ownership.",
+            "0.5": "Partial descriptions \u2014 some projects have scope and deliverables, others lack detail.",
+            "0.75": "Good project charters with scope, deliverables, and ownership for most projects, minor gaps.",
+            "1.0": "Comprehensive charters for all projects with full scope, deliverables, ownership, and success criteria."
+          }
+        },
+        {
+          "id": "6.2",
+          "name": "Project Timelines",
+          "rubric": {
+            "0.0": "No implementation timelines provided.",
+            "0.25": "Very high-level timeline without milestones or phasing.",
+            "0.5": "Some timelines exist but inconsistent \u2014 some projects have milestones, others do not.",
+            "0.75": "Good timelines with milestones and phases for most projects, minor gaps.",
+            "1.0": "Detailed implementation timelines for all projects with milestones, phases, and dependencies."
+          }
+        },
+        {
+          "id": "6.3",
+          "name": "Project Budgets",
+          "rubric": {
+            "0.0": "No budget information provided.",
+            "0.25": "High-level total budget mentioned without per-project breakdown.",
+            "0.5": "Some budget allocation per project but inconsistent or missing funding sources.",
+            "0.75": "Good budget allocation for most projects with funding sources, minor gaps.",
+            "1.0": "Comprehensive budget allocation per project with funding sources, phasing, and cost breakdowns."
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Risks & Mitigation Measures",
+      "sub_components": [
+        {
+          "id": "7.1",
+          "name": "Risk Identification",
+          "rubric": {
+            "0.0": "No risks identified.",
+            "0.25": "Brief or generic risk mention without categorization or assessment.",
+            "0.5": "Some risks identified but lacking systematic categorization, likelihood, or impact assessment.",
+            "0.75": "Good risk identification with categorization and mostly assessed likelihood/impact, minor gaps.",
+            "1.0": "Comprehensive risk register with systematic identification, categorization, likelihood, and impact assessment."
+          }
+        },
+        {
+          "id": "7.2",
+          "name": "Mitigation Measures",
+          "rubric": {
+            "0.0": "No mitigation measures defined.",
+            "0.25": "Generic mitigation mentioned without specific actions or ownership.",
+            "0.5": "Some mitigation strategies defined but not all risks covered or lacking ownership.",
+            "0.75": "Good mitigation strategies for most risks with ownership, minor gaps in coverage.",
+            "1.0": "Comprehensive mitigation strategies for all identified risks with clear ownership, timelines, and contingency plans."
+          }
+        }
+      ]
+    }
+  ]
+}

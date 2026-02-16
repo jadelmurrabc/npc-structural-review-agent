@@ -1,8 +1,10 @@
-﻿from __future__ import annotations
+"""Top-level agent — exports root_agent for ADK."""
+from __future__ import annotations
 import logging
 import os
 from google.adk.agents import LlmAgent
 from base_agent.prompts import return_instructions_root
+from base_agent.tools.structural_review_tool import structural_review
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +18,7 @@ def get_root_agent() -> LlmAgent:
         model=model_name,
         name="npc_structural_reviewer",
         instruction=return_instructions_root(),
-        tools=[],
+        tools=[structural_review],
         generate_content_config={"temperature": 0.0},
     )
 

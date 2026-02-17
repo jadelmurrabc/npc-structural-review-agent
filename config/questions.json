@@ -1,17 +1,19 @@
 {
-  "classification": "entity",
+  "_README": "This file contains all evaluation criteria for the NPC Structural Checklist Review. Each sub-component has a name, question, and 5 scoring levels. The client can edit any text in this file. The scoring levels must stay as 0.0, 0.25, 0.5, 0.75, and 1.0 - do not change the score values, only the descriptions.",
   "components": [
     {
       "id": 1,
       "name": "Baselines, Benchmarks, & Trends",
+      "description": "Assesses whether the strategy document includes a thorough analysis of the current state, comparative benchmarking, and forward-looking trends.",
       "sub_components": [
         {
           "id": "1.1",
           "name": "Diagnostic (SWOT, gap analysis, quantified baseline)",
-          "rubric": {
+          "question": "Does the document provide a structured diagnostic of the current state, including a SWOT analysis, gap analysis, and quantified baseline data?",
+          "scoring": {
             "0.0": "No diagnostic, SWOT, gap analysis, or baseline data is present in the document.",
             "0.25": "Very high-level or vague mention of current state without structured analysis or data.",
-            "0.5": "Diagnostic exists (e.g., qualitative SWOT) but is incomplete \u2014 missing quantified baselines or gap analysis.",
+            "0.5": "Diagnostic exists (e.g., qualitative SWOT) but is incomplete - missing quantified baselines or gap analysis.",
             "0.75": "Well-developed diagnostic with quantified baselines but minor gaps in depth or coverage.",
             "1.0": "Comprehensive diagnostic with fully quantified baselines, structured SWOT, and detailed gap analysis."
           }
@@ -19,10 +21,11 @@
         {
           "id": "1.2",
           "name": "Benchmarks & Comparisons",
-          "rubric": {
+          "question": "Does the document include benchmarking against peer countries or leading institutions, with comparative data and lessons learned?",
+          "scoring": {
             "0.0": "No benchmarking or comparative analysis present.",
             "0.25": "Vague mention of peer countries or comparators without any data or specifics.",
-            "0.5": "Some benchmarking present but limited in scope \u2014 few comparators or incomplete data.",
+            "0.5": "Some benchmarking present but limited in scope - few comparators or incomplete data.",
             "0.75": "Good benchmarking with multiple comparators and data, minor gaps in lessons learned.",
             "1.0": "Comprehensive benchmarking with regional/international comparators, detailed data, and documented lessons learned."
           }
@@ -30,7 +33,8 @@
         {
           "id": "1.3",
           "name": "Trends",
-          "rubric": {
+          "question": "Does the document identify and analyze global, regional, and sectoral trends, and integrate them into the strategic direction?",
+          "scoring": {
             "0.0": "No trends analysis present.",
             "0.25": "Brief or vague mention of trends without analysis or linkage to strategy.",
             "0.5": "Some trends identified but analysis is surface-level or not linked to strategic direction.",
@@ -43,11 +47,13 @@
     {
       "id": 2,
       "name": "Vision, Mission & Values",
+      "description": "Assesses whether the strategy clearly defines a vision, mission, and values that are ambitious, aligned with national direction, and operationally relevant.",
       "sub_components": [
         {
           "id": "2.1",
           "name": "Vision",
-          "rubric": {
+          "question": "Does the document contain a clear, ambitious vision statement that is aligned with Qatars national direction (QNV 2030, NDS3)?",
+          "scoring": {
             "0.0": "No vision statement present.",
             "0.25": "Vision exists but is vague, generic, or not aligned with national direction.",
             "0.5": "Vision is stated but lacks ambition, specificity, or clear national alignment.",
@@ -58,10 +64,11 @@
         {
           "id": "2.2",
           "name": "Mission",
-          "rubric": {
+          "question": "Does the document contain a mission statement that clearly articulates purpose, scope, and target beneficiaries?",
+          "scoring": {
             "0.0": "No mission statement present.",
             "0.25": "Mission exists but is vague or does not articulate purpose and scope.",
-            "0.5": "Mission is stated but incomplete \u2014 missing either purpose, scope, or target beneficiaries.",
+            "0.5": "Mission is stated but incomplete - missing either purpose, scope, or target beneficiaries.",
             "0.75": "Good mission statement with clear purpose and scope, minor gaps in specificity.",
             "1.0": "Comprehensive mission clearly articulating purpose, scope, and target beneficiaries."
           }
@@ -69,7 +76,8 @@
         {
           "id": "2.3",
           "name": "Values",
-          "rubric": {
+          "question": "Does the document define values that are aligned with the entity/sector mandate and are operationally relevant?",
+          "scoring": {
             "0.0": "No values defined.",
             "0.25": "Values mentioned but generic and not linked to entity/sector mandate.",
             "0.5": "Values defined but only partially aligned with mandate or lacking operational relevance.",
@@ -82,11 +90,13 @@
     {
       "id": 3,
       "name": "Strategic Objectives & KPIs",
+      "description": "Assesses whether the strategy defines clear, measurable objectives supported by well-defined KPIs with baselines and targets.",
       "sub_components": [
         {
           "id": "3.1",
           "name": "Strategic Objectives / Pillars",
-          "rubric": {
+          "question": "Does the document define strategic objectives or pillars that are measurable and clearly linked to the vision and mission?",
+          "scoring": {
             "0.0": "No strategic objectives or pillars defined.",
             "0.25": "Objectives mentioned but vague, not measurable, or poorly structured.",
             "0.5": "Objectives defined but some lack measurability or clear linkage to vision.",
@@ -97,7 +107,8 @@
         {
           "id": "3.2",
           "name": "KPI Definition",
-          "rubric": {
+          "question": "Does the document define KPIs with full methodology, measurement cadence, data source, and calculation method?",
+          "scoring": {
             "0.0": "No KPIs defined.",
             "0.25": "KPIs listed but without methodology, measurement cadence, or data source.",
             "0.5": "KPIs defined with some methodology but missing cadence, data source, or calculation details.",
@@ -108,10 +119,11 @@
         {
           "id": "3.3",
           "name": "Baselines & Targets",
-          "rubric": {
+          "question": "Does the document provide quantified baselines and time-bound targets for all KPIs?",
+          "scoring": {
             "0.0": "No baselines or targets provided for KPIs.",
             "0.25": "Some targets exist but no baselines, or baselines without targets.",
-            "0.5": "Partial baselines and targets \u2014 some KPIs covered, others missing.",
+            "0.5": "Partial baselines and targets - some KPIs covered, others missing.",
             "0.75": "Most KPIs have baselines and targets, minor gaps in coverage or time-bounding.",
             "1.0": "All KPIs have quantified baselines and time-bound targets with clear milestones."
           }
@@ -121,14 +133,16 @@
     {
       "id": 4,
       "name": "Governance Model",
+      "description": "Assesses whether the strategy defines clear internal and external governance structures with coordination mechanisms.",
       "sub_components": [
         {
           "id": "4.1",
           "name": "Internal Stakeholder Ecosystem",
-          "rubric": {
+          "question": "Does the document describe a clear internal governance structure with committees, roles, responsibilities, and decision-making flows?",
+          "scoring": {
             "0.0": "No internal governance structure described.",
             "0.25": "Brief mention of governance without roles, committees, or decision-making structure.",
-            "0.5": "Some governance elements described but incomplete \u2014 missing roles or decision-making clarity.",
+            "0.5": "Some governance elements described but incomplete - missing roles or decision-making clarity.",
             "0.75": "Good internal governance with committees and roles, minor gaps in decision-making flows.",
             "1.0": "Comprehensive internal governance with clear committees, roles, responsibilities, and decision-making flows."
           }
@@ -136,7 +150,8 @@
         {
           "id": "4.2",
           "name": "External Stakeholder Ecosystem",
-          "rubric": {
+          "question": "Does the document identify external stakeholders with clear roles, responsibilities, and engagement mechanisms?",
+          "scoring": {
             "0.0": "No external stakeholders identified.",
             "0.25": "External stakeholders briefly mentioned without roles or engagement model.",
             "0.5": "Some external stakeholders mapped but roles or engagement mechanisms are incomplete.",
@@ -147,7 +162,8 @@
         {
           "id": "4.3",
           "name": "Coordination & Interaction Mechanisms",
-          "rubric": {
+          "question": "Does the document define coordination mechanisms with clear cadence, format, escalation paths, and accountability?",
+          "scoring": {
             "0.0": "No coordination mechanisms described.",
             "0.25": "Vague mention of coordination without specific mechanisms or cadence.",
             "0.5": "Some coordination mechanisms exist but lack detail on cadence, format, or accountability.",
@@ -160,11 +176,13 @@
     {
       "id": 5,
       "name": "Initiatives & Projects",
+      "description": "Assesses whether the strategy identifies initiatives and projects that are clearly derived from and linked to strategic objectives.",
       "sub_components": [
         {
           "id": "5.1",
           "name": "Projects Derived From Initiatives",
-          "rubric": {
+          "question": "Are all projects clearly derived from strategic initiatives with full traceability to objectives?",
+          "scoring": {
             "0.0": "No initiatives or projects identified.",
             "0.25": "Projects listed but not linked to strategic initiatives or objectives.",
             "0.5": "Some projects derived from initiatives but linkage is incomplete or unclear.",
@@ -174,11 +192,12 @@
         },
         {
           "id": "5.2",
-          "name": "Conditions/Games Linked To Objectives",
-          "rubric": {
+          "name": "Conditions Linked To Objectives",
+          "question": "Are all projects and conditions explicitly mapped to strategic objectives with clear contribution logic?",
+          "scoring": {
             "0.0": "No linkage between projects/conditions and strategic objectives.",
-            "0.25": "Vague or partial linkage \u2014 some projects connected, many orphaned.",
-            "0.5": "Moderate linkage \u2014 most projects connected but some lack clear objective mapping.",
+            "0.25": "Vague or partial linkage - some projects connected, many orphaned.",
+            "0.5": "Moderate linkage - most projects connected but some lack clear objective mapping.",
             "0.75": "Good linkage with most projects mapped to objectives, minor orphan projects.",
             "1.0": "All projects and conditions explicitly mapped to strategic objectives with clear contribution logic."
           }
@@ -188,14 +207,16 @@
     {
       "id": 6,
       "name": "Project Description, Timeline, & Budgets",
+      "description": "Assesses whether projects have complete charters, implementation timelines, and budget allocations.",
       "sub_components": [
         {
           "id": "6.1",
           "name": "Project Description And Charters",
-          "rubric": {
+          "question": "Does the document provide comprehensive project charters with scope, deliverables, ownership, and success criteria?",
+          "scoring": {
             "0.0": "No project descriptions or charters provided.",
             "0.25": "Brief project descriptions without scope, deliverables, or ownership.",
-            "0.5": "Partial descriptions \u2014 some projects have scope and deliverables, others lack detail.",
+            "0.5": "Partial descriptions - some projects have scope and deliverables, others lack detail.",
             "0.75": "Good project charters with scope, deliverables, and ownership for most projects, minor gaps.",
             "1.0": "Comprehensive charters for all projects with full scope, deliverables, ownership, and success criteria."
           }
@@ -203,10 +224,11 @@
         {
           "id": "6.2",
           "name": "Project Timelines",
-          "rubric": {
+          "question": "Does the document include detailed implementation timelines for all projects with milestones, phases, and dependencies?",
+          "scoring": {
             "0.0": "No implementation timelines provided.",
             "0.25": "Very high-level timeline without milestones or phasing.",
-            "0.5": "Some timelines exist but inconsistent \u2014 some projects have milestones, others do not.",
+            "0.5": "Some timelines exist but inconsistent - some projects have milestones, others do not.",
             "0.75": "Good timelines with milestones and phases for most projects, minor gaps.",
             "1.0": "Detailed implementation timelines for all projects with milestones, phases, and dependencies."
           }
@@ -214,7 +236,8 @@
         {
           "id": "6.3",
           "name": "Project Budgets",
-          "rubric": {
+          "question": "Does the document provide comprehensive budget allocations per project with funding sources, phasing, and cost breakdowns?",
+          "scoring": {
             "0.0": "No budget information provided.",
             "0.25": "High-level total budget mentioned without per-project breakdown.",
             "0.5": "Some budget allocation per project but inconsistent or missing funding sources.",
@@ -227,11 +250,13 @@
     {
       "id": 7,
       "name": "Risks & Mitigation Measures",
+      "description": "Assesses whether the strategy identifies risks systematically and defines mitigation strategies with clear ownership.",
       "sub_components": [
         {
           "id": "7.1",
           "name": "Risk Identification",
-          "rubric": {
+          "question": "Does the document include a comprehensive risk register with systematic identification, categorization, likelihood, and impact assessment?",
+          "scoring": {
             "0.0": "No risks identified.",
             "0.25": "Brief or generic risk mention without categorization or assessment.",
             "0.5": "Some risks identified but lacking systematic categorization, likelihood, or impact assessment.",
@@ -242,7 +267,8 @@
         {
           "id": "7.2",
           "name": "Mitigation Measures",
-          "rubric": {
+          "question": "Does the document define comprehensive mitigation strategies for all identified risks with clear ownership, timelines, and contingency plans?",
+          "scoring": {
             "0.0": "No mitigation measures defined.",
             "0.25": "Generic mitigation mentioned without specific actions or ownership.",
             "0.5": "Some mitigation strategies defined but not all risks covered or lacking ownership.",

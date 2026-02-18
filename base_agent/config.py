@@ -1,9 +1,9 @@
 ﻿"""Configuration module for NPC Structural Review Agent.
 
 IMPORTANT: This module is serialized via cloudpickle during deployment.
-All paths are stored as STRINGS (via os.path), never as pathlib.Path objects.
-This avoids the 'cannot instantiate WindowsPath on your system' error when
-a Windows-pickled module is deserialized on a Linux container.
+All Path objects are created LAZILY (not at module level) to avoid the
+'cannot instantiate WindowsPath on your system' error when a Windows-
+pickled module is deserialized on a Linux container.
 """
 import os
 import json
@@ -15,6 +15,7 @@ def _get_env(name: str, fallback: str = "") -> str:
 
 
 # Store directory paths as STRINGS, not Path objects.
+# This avoids WindowsPath being pickled and failing on Linux.
 _BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CONFIG_DIR: str = os.path.join(_BASE_DIR, "config")
 
@@ -36,6 +37,8 @@ def get_config_dir() -> str:
 
 
 # --- Embedded config support for Agent Engine ---
+# When deployed via cloudpickle, config files may not exist on disk.
+# This module holds embedded copies that checklist_loader can use.
 _EMBEDDED_CONFIGS: dict[str, dict] = {}
 
 
@@ -60,5 +63,5 @@ def load_config_json(filename: str) -> dict:
 
 
 # --- Backward compatibility ---
-# Exposed as a string, not a Path object.
+# Some modules may import CONFIG_DIR directly. Provide it as a string.
 CONFIG_DIR = _CONFIG_DIR

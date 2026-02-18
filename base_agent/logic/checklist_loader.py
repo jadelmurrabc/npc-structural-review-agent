@@ -1,12 +1,11 @@
 """Load evaluation criteria from the client-editable questions.json and applicability rules."""
 import json
-from base_agent.config import CONFIG_DIR
+from base_agent.config import CONFIG_DIR, load_config_json
 
 
 def load_applicability(classification: str) -> dict:
     """Return applicability rules for a given classification."""
-    with open(CONFIG_DIR / "applicability.json", "r") as f:
-        data = json.load(f)
+    data = load_config_json("applicability.json")
     classification = classification.lower().strip()
     if classification not in data:
         raise ValueError(f"Unknown classification: {classification}. Must be entity, sectoral, or thematic.")
@@ -15,11 +14,7 @@ def load_applicability(classification: str) -> dict:
 
 def load_questions() -> dict:
     """Load the unified questions file (client-editable)."""
-    filepath = CONFIG_DIR / "questions.json"
-    if not filepath.exists():
-        raise FileNotFoundError(f"Questions file not found: {filepath}")
-    with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return load_config_json("questions.json")
 
 
 def load_checklist(classification: str) -> dict:

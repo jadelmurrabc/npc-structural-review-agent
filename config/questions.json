@@ -1,5 +1,5 @@
 {
-  "_README": "This file contains all evaluation criteria for the NPC Structural Checklist Review. Each sub-component has a name, question, and 5 scoring levels. The client can edit any text in this file. The scoring levels must stay as 0.0, 0.25, 0.5, 0.75, and 1.0 - do not change the score values, only the descriptions.",
+  "_README": "This file contains all evaluation criteria for the NPC Structural Checklist Review. Each sub-criteria has a name, question, and 5 scoring levels. The client can edit any text in this file. The scoring levels must stay as 0.0, 0.25, 0.5, 0.75, and 1.0 - do not change the score values, only the descriptions.",
   "components": [
     {
       "id": 1,
@@ -90,7 +90,7 @@
     {
       "id": 3,
       "name": "Strategic Objectives & KPIs",
-      "description": "Assesses whether the strategy defines clear, measurable objectives supported by well-defined KPIs with baselines and targets.",
+      "description": "Assesses whether the strategy defines clear, measurable objectives supported by well-defined KPIs with baselines, targets, and SMART criteria.",
       "sub_components": [
         {
           "id": "3.1",
@@ -126,6 +126,18 @@
             "0.5": "Partial baselines and targets - some KPIs covered, others missing.",
             "0.75": "Most KPIs have baselines and targets, minor gaps in coverage or time-bounding.",
             "1.0": "All KPIs have quantified baselines and time-bound targets with clear milestones."
+          }
+        },
+        {
+          "id": "3.4",
+          "name": "SMART Criteria",
+          "question": "Are KPIs designed to meet SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)?",
+          "scoring": {
+            "0.0": "No measurable KPIs present.",
+            "0.25": "KPIs listed but vague and do not meet SMART criteria.",
+            "0.5": "Some KPIs are measurable, but others are too broad or lacking calculation methodology.",
+            "0.75": "Most KPIs are SMART but with minor issues (e.g., relevant but not time-bound, or measurable but no calculation method).",
+            "1.0": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence."
           }
         }
       ]
@@ -176,30 +188,30 @@
     {
       "id": 5,
       "name": "Initiatives & Projects",
-      "description": "Assesses whether the strategy identifies initiatives and projects that are clearly derived from and linked to strategic objectives.",
+      "description": "Assesses whether the strategy identifies transformative initiatives linked to objectives and projects derived from those initiatives.",
       "sub_components": [
         {
           "id": "5.1",
-          "name": "Projects Derived From Initiatives",
-          "question": "Are all projects clearly derived from strategic initiatives with full traceability to objectives?",
+          "name": "Transformative Initiatives Linked To Objectives",
+          "question": "Are initiatives clearly defined, transformative (not BAU), and explicitly linked to strategic objectives/pillars?",
           "scoring": {
-            "0.0": "No initiatives or projects identified.",
-            "0.25": "Projects listed but not linked to strategic initiatives or objectives.",
-            "0.5": "Some projects derived from initiatives but linkage is incomplete or unclear.",
-            "0.75": "Good derivation of projects from initiatives with mostly clear linkage, minor gaps.",
-            "1.0": "All projects clearly derived from strategic initiatives with full traceability to objectives."
+            "0.0": "No initiatives identified.",
+            "0.25": "Few initiatives named but vague and not transformative, or not linked to objectives.",
+            "0.5": "Initiatives described but not explicitly tied to objectives or lacking transformative scope.",
+            "0.75": "Initiatives defined and linked to some objectives but with limited transformative scope or impact.",
+            "1.0": "All initiatives clearly defined, transformative, and explicitly linked to objectives and pillars."
           }
         },
         {
           "id": "5.2",
-          "name": "Conditions Linked To Objectives",
-          "question": "Are all projects and conditions explicitly mapped to strategic objectives with clear contribution logic?",
+          "name": "Projects Derived From Initiatives",
+          "question": "Are projects clearly defined, derived from initiatives, and do they have a clear scope and deliverables?",
           "scoring": {
-            "0.0": "No linkage between projects/conditions and strategic objectives.",
-            "0.25": "Vague or partial linkage - some projects connected, many orphaned.",
-            "0.5": "Moderate linkage - most projects connected but some lack clear objective mapping.",
-            "0.75": "Good linkage with most projects mapped to objectives, minor orphan projects.",
-            "1.0": "All projects and conditions explicitly mapped to strategic objectives with clear contribution logic."
+            "0.0": "No projects described.",
+            "0.25": "Projects mentioned vaguely without scope or link to initiatives.",
+            "0.5": "Some projects derived from initiatives, but not all and lacking detail.",
+            "0.75": "Most projects clearly derived and defined with scope/deliverables, but some gaps remain.",
+            "1.0": "All projects explicitly derived from initiatives, with clear scope and deliverables."
           }
         }
       ]
@@ -207,18 +219,18 @@
     {
       "id": 6,
       "name": "Project Description, Timeline, & Budgets",
-      "description": "Assesses whether projects have complete charters, implementation timelines, and budget allocations.",
+      "description": "Assesses whether projects have complete descriptions with owners, implementation timelines, and budget allocations.",
       "sub_components": [
         {
           "id": "6.1",
-          "name": "Project Description And Charters",
-          "question": "Does the document provide comprehensive project charters with scope, deliverables, ownership, and success criteria?",
+          "name": "Project Description And Owners",
+          "question": "Are projects clearly described with defined owners, roles, and responsibilities?",
           "scoring": {
-            "0.0": "No project descriptions or charters provided.",
-            "0.25": "Brief project descriptions without scope, deliverables, or ownership.",
-            "0.5": "Partial descriptions - some projects have scope and deliverables, others lack detail.",
-            "0.75": "Good project charters with scope, deliverables, and ownership for most projects, minor gaps.",
-            "1.0": "Comprehensive charters for all projects with full scope, deliverables, ownership, and success criteria."
+            "0.0": "No project descriptions provided and no owners identified.",
+            "0.25": "Short or vague descriptions with no clear owner or role.",
+            "0.5": "Some projects described with owners, but roles unclear or overlapping.",
+            "0.75": "Most projects have clear descriptions and owners with defined roles.",
+            "1.0": "All projects are clearly described with defined owners, roles, and alignment with objectives."
           }
         },
         {
@@ -255,25 +267,25 @@
         {
           "id": "7.1",
           "name": "Risk Identification",
-          "question": "Does the document include a comprehensive risk register with systematic identification, categorization, likelihood, and impact assessment?",
+          "question": "Does the document include a dedicated risk management section with a risk register that systematically identifies, categorizes, and assesses implementation risks (likelihood and impact)?",
           "scoring": {
-            "0.0": "No risks identified.",
-            "0.25": "Brief or generic risk mention without categorization or assessment.",
-            "0.5": "Some risks identified but lacking systematic categorization, likelihood, or impact assessment.",
-            "0.75": "Good risk identification with categorization and mostly assessed likelihood/impact, minor gaps.",
-            "1.0": "Comprehensive risk register with systematic identification, categorization, likelihood, and impact assessment."
+            "0.0": "No dedicated risk section, risk register, or risk matrix present. Note: a 'Challenges' or 'Problems' section describing the sector's current issues is diagnostic content (Criteria 1), NOT risk identification. Implementation risks address what could go wrong DURING strategy execution (e.g., funding gaps, capacity shortfalls, coordination failures, political changes, technology risks).",
+            "0.25": "Brief or generic mention of implementation risks without a structured register, categorization, or assessment.",
+            "0.5": "Some implementation risks identified in a dedicated section but lacking systematic categorization, likelihood ratings, or impact assessment.",
+            "0.75": "Good risk identification with a dedicated section covering multiple implementation risks with categorization and mostly assessed likelihood/impact, minor gaps.",
+            "1.0": "Comprehensive risk register with systematic identification of implementation risks, categorization, likelihood ratings, and impact assessment."
           }
         },
         {
           "id": "7.2",
           "name": "Mitigation Measures",
-          "question": "Does the document define comprehensive mitigation strategies for all identified risks with clear ownership, timelines, and contingency plans?",
+          "question": "Does the document define mitigation strategies for identified implementation risks with clear ownership, timelines, and contingency plans?",
           "scoring": {
-            "0.0": "No mitigation measures defined.",
-            "0.25": "Generic mitigation mentioned without specific actions or ownership.",
-            "0.5": "Some mitigation strategies defined but not all risks covered or lacking ownership.",
-            "0.75": "Good mitigation strategies for most risks with ownership, minor gaps in coverage.",
-            "1.0": "Comprehensive mitigation strategies for all identified risks with clear ownership, timelines, and contingency plans."
+            "0.0": "No mitigation measures for implementation risks defined. Note: the strategy's own projects and action plans (Criteria 5-6) are the strategy's CORE ACTIVITIES — they are NOT risk mitigation measures. Mitigation measures address risks TO the strategy's execution (e.g., 'If funding is delayed, prioritize Phase 1 projects'). If no implementation risks are identified in 7.1, score 0.0 here.",
+            "0.25": "Generic mitigation mentioned for implementation risks without specific actions or ownership.",
+            "0.5": "Some mitigation strategies defined for implementation risks but not all risks covered or lacking ownership.",
+            "0.75": "Good mitigation strategies for most identified implementation risks with ownership, minor gaps in coverage.",
+            "1.0": "Comprehensive mitigation strategies for all identified implementation risks with clear ownership, timelines, and contingency plans."
           }
         }
       ]

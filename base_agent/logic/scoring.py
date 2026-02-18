@@ -3,6 +3,11 @@
 
 VALID_SCORES = {0.0, 0.25, 0.5, 0.75, 1.0}
 
+# Total sub-criteria in the structural checklist (methodology page 15).
+# The overall score formula is: (sum of grades / 20 questions) × 100.
+# This denominator is FIXED at 20 regardless of classification.
+TOTAL_SUB_COMPONENTS = 20
+
 SCORE_LABELS = {
     0.0: "Absent",
     0.25: "Low",
@@ -66,11 +71,31 @@ def aggregate_component(sub_scores: list[float]) -> dict:
     }
 
 
-def calculate_overall_score(all_sub_scores: list[float]) -> float:
-    if not all_sub_scores:
+def calculate_overall_score(applicable_scores: list[float], na_count: int = 0) -> float:
+    """Calculate the overall structural checklist score as a percentage.
+
+    Per NPC methodology (page 15):
+        Overall Score = (sum of grades per question / 20 questions) × 100
+
+    The denominator is ALWAYS 20 (total sub-criteria in the framework).
+    N/A sub-criteria are treated as fully compliant (1.0 each) so that
+    classifications with fewer applicable items (e.g., Entity with 17)
+    are not structurally capped below 100%.
+
+    Args:
+        applicable_scores: List of scores (0.0-1.0) for sub-criteria
+            that were evaluated (applicable=True, score is not None).
+        na_count: Number of Not Applicable sub-criteria (including
+            conditional items that were excluded). Each contributes 1.0
+            to the numerator.
+
+    Returns:
+        Overall score as a percentage (0.0-100.0).
+    """
+    if not applicable_scores and na_count == 0:
         return 0.0
-    raw_avg = sum(all_sub_scores) / len(all_sub_scores)
-    return round(raw_avg * 100, 2)
+    numerator = sum(applicable_scores) + (na_count * 1.0)
+    return round(numerator / TOTAL_SUB_COMPONENTS * 100, 2)
 
 
 def has_evidence(sub_result: dict) -> bool:

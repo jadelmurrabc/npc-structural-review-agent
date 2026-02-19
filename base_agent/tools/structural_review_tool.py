@@ -82,15 +82,8 @@ def _extract_bytes(part) -> bytes | None:
     except Exception:
         pass
 
-    # 4) file_data with file_uri (GCS download)
-    try:
-        file_data = getattr(part, "file_data", None)
-        if file_data:
-            uri = getattr(file_data, "file_uri", None) or ""
-            if uri:
-                return _download_gcs_uri(uri)
-    except Exception:
-        pass
+    # 4) file_data with file_uri — not available on Enterprise
+    # (kept as stub for future GCS-based extraction if needed)
 
     return None
 
@@ -159,60 +152,8 @@ def _extract_pdf_from_user_message(tool_context) -> str | None:
         return None
 
 
-def _extract_pdf_from_session_events(tool_context) -> str | None:
-    """FALLBACK: scan session events for PDF file_data or inline_data."""
-    try:
-        inv_ctx = getattr(tool_context, '_invocation_context', None) or getattr(tool_context, 'invocation_context', None)
-        if inv_ctx is None:
-            for attr in dir(tool_context):
-                if attr.startswith('__'):
-                    continue
-                val = getattr(tool_context, attr, None)
-                if val is not None and hasattr(val, 'session'):
-                    inv_ctx = val
-                    break
-        if inv_ctx is None:
-            return None
 
-        session = getattr(inv_ctx, 'session', None)
-        if session is None:
-            return None
 
-        events = getattr(session, 'events', None) or []
-        print(f"METHOD 2 session_events: {len(events)} events", flush=True)
-
-        for i, event in enumerate(events):
-            content = getattr(event, 'content', None)
-            if content is None:
-                continue
-            parts = getattr(content, 'parts', None) or []
-            for j, part in enumerate(parts):
-                mime = _part_mime(part)
-
-                # Check file_data separately
-                if "pdf" not in mime.lower():
-                    file_data = getattr(part, 'file_data', None)
-                    if file_data:
-                        uri = getattr(file_data, 'file_uri', '') or ''
-                        fd_mime = getattr(file_data, 'mime_type', '') or ''
-                        if "pdf" in fd_mime.lower() or uri.lower().endswith(".pdf"):
-                            pdf_bytes = _download_gcs_uri(uri)
-                            if pdf_bytes:
-                                text = _extract_text_from_pdf_bytes(pdf_bytes)
-                                if text and len(text) > 200:
-                                    return text
-                    continue
-
-                pdf_bytes = _extract_bytes(part)
-                if pdf_bytes:
-                    text = _extract_text_from_pdf_bytes(pdf_bytes)
-                    if text and len(text) > 200:
-                        return text
-
-        return None
-    except Exception as e:
-        logger.error("Session events scan failed: %s", e, exc_info=True)
-        return None
 
 
 def _resolve_maybe_coroutine(val):
@@ -327,53 +268,65 @@ def _find_latest_gcs_text() -> str | None:
         return None
 
 
-def _download_gcs_uri(uri: str) -> bytes | None:
-    if not uri:
-        return None
-    uri = uri.strip()
 
-    if uri.startswith("gs://"):
-        try:
-            from google.cloud import storage as gcs_storage
-            parts = uri[5:].split("/", 1)
-            if len(parts) != 2:
-                return None
-            return gcs_storage.Client().bucket(parts[0]).blob(parts[1]).download_as_bytes()
-        except Exception as e:
-            logger.error("GCS download failed for %s: %s", uri[:200], e)
-            return None
 
-    if "storage.googleapis.com" in uri or "storage.cloud.google.com" in uri:
-        try:
-            from urllib.parse import urlparse, unquote
-            path = unquote(urlparse(uri).path).lstrip("/")
-            parts = path.split("/", 1)
-            if len(parts) == 2:
-                return _download_gcs_uri(f"gs://{parts[0]}/{parts[1]}")
-        except Exception:
-            pass
 
-    if "googleapis.com" in uri:
-        try:
-            import google.auth, google.auth.transport.requests, urllib.request
-            creds, _ = google.auth.default()
-            creds.refresh(google.auth.transport.requests.Request())
-            req = urllib.request.Request(uri)
-            req.add_header("Authorization", f"Bearer {creds.token}")
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                return resp.read()
-        except Exception as e:
-            logger.warning("Authenticated download failed: %s", e)
 
-    if uri.startswith("http"):
-        try:
-            import urllib.request
-            with urllib.request.urlopen(uri, timeout=120) as resp:
-                return resp.read()
-        except Exception:
-            pass
+# ═══════════════════════════════════════════════════════════════
+#  Arabic / Non-English Translation Support
+# ═══════════════════════════════════════════════════════════════
 
-    return None
+def _is_arabic(text: str, threshold: float = 0.2) -> bool:
+    """Detect if text has significant Arabic content."""
+    if not text:
+        return False
+    sample = text[:15000]
+    arabic = sum(1 for c in sample if '\u0600' <= c <= '\u06FF' or '\u0750' <= c <= '\u077F'
+                 or '\uFB50' <= c <= '\uFDFF' or '\uFE70' <= c <= '\uFEFF')
+    alpha = sum(1 for c in sample if c.isalpha())
+    return alpha > 50 and (arabic / alpha) > threshold
+
+
+def _translate_arabic(text: str) -> str:
+    """Translate Arabic document to English, preserving structure and data."""
+    CHUNK = 80000
+    instruction = (
+        "You are a professional Arabic-to-English translator for government strategy documents. "
+        "Translate with 100% accuracy. Never skip, summarize, or add content."
+    )
+    rules = (
+        "RULES:\n"
+        "1. Preserve ALL [PAGE X] markers exactly as-is.\n"
+        "2. Preserve ALL numbers, dates, percentages, statistics, names exactly.\n"
+        "3. Preserve document structure (headings, lists, tables, bullet points).\n"
+        "4. Translate EVERYTHING — do not skip any section.\n"
+        "5. Output ONLY the English translation, no commentary.\n\n"
+    )
+
+    if len(text) <= CHUNK:
+        return _call_gemini(f"{rules}DOCUMENT:\n{text}", system_instruction=instruction)
+
+    # Chunk for large documents
+    lines = text.split('\n')
+    chunks, current, size = [], [], 0
+    for line in lines:
+        current.append(line)
+        size += len(line) + 1
+        if size >= CHUNK:
+            chunks.append('\n'.join(current))
+            current, size = [], 0
+    if current:
+        chunks.append('\n'.join(current))
+
+    parts = []
+    for i, chunk in enumerate(chunks):
+        logger.info("Translating chunk %d/%d (%d chars)", i + 1, len(chunks), len(chunk))
+        print(f"Translating chunk {i+1}/{len(chunks)}...", flush=True)
+        prompt = f"Translate part {i+1} of {len(chunks)}.\n{rules}TEXT:\n{chunk}"
+        parts.append(_call_gemini(prompt, system_instruction=instruction))
+        if i < len(chunks) - 1:
+            time.sleep(3)
+    return '\n'.join(parts)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -385,11 +338,6 @@ def extract_document(tool_context: ToolContext = None) -> dict:
 
     Call this FIRST before structural_review.
 
-    Extraction priority:
-      1. tool_context.user_content (Enterprise/AgentSpace — proven)
-      2. Session events (file_data with GCS URI)
-      3. Artifacts (ADK Web)
-
     Args:
         tool_context: Automatically injected by ADK.
 
@@ -397,62 +345,58 @@ def extract_document(tool_context: ToolContext = None) -> dict:
         Dict with status, page count, character count.
     """
     global _DOCUMENT_CACHE
-    # Use print() for diagnostics — logger.info() doesn't appear in Cloud Logging on Agent Engine
     print("=== extract_document CALLED ===", flush=True)
 
     if tool_context is None:
-        print("ERROR: tool_context is None", flush=True)
         return {"status": "error", "message": "No tool context.", "pages": 0, "characters": 0}
-
-    # === DEEP DIAGNOSTIC: What does tool_context actually have? ===
-    print(f"tool_context type: {type(tool_context).__name__}", flush=True)
-    tc_attrs = [a for a in dir(tool_context) if not a.startswith('__')]
-    print(f"tool_context attrs: {tc_attrs}", flush=True)
-    for attr in ['user_content', 'userContent', 'state', 'actions',
-                 'function_call_id', 'agent_name', '_invocation_context',
-                 'invocation_context', 'list_artifacts', 'load_artifact']:
-        val = getattr(tool_context, attr, 'MISSING')
-        if val != 'MISSING':
-            print(f"  tc.{attr} = {repr(val)[:300]} (type={type(val).__name__})", flush=True)
 
     extracted_text = None
     method = "none"
 
-    # Method 1: user_content (PRIMARY — proven on Enterprise)
-    extracted_text = _extract_pdf_from_user_message(tool_context)
-    if extracted_text and len(extracted_text) > 200:
-        method = "user_content"
-        print(f"SUCCESS method 1 user_content: {len(extracted_text)} chars", flush=True)
+    # Method 0: Enterprise pre-extracted text (tags in user_content)
+    try:
+        parts = _get_user_message_parts(tool_context)
+        all_text = []
+        for part in parts:
+            pt = getattr(part, 'text', '') or (part.get('text', '') if isinstance(part, dict) else '')
+            if pt and '<start_of_user_uploaded_file' not in pt and '<end_of_user_uploaded_file' not in pt:
+                # Skip the user's typed message (short text like "sectoral")
+                if len(pt.strip()) > 500:
+                    all_text.append(pt.strip())
+        if all_text:
+            extracted_text = '\n'.join(all_text)
+            if len(extracted_text) > 500:
+                method = "enterprise_text"
+                print(f"SUCCESS enterprise text: {len(extracted_text)} chars", flush=True)
+    except Exception as e:
+        print(f"Enterprise text extraction failed: {e}", flush=True)
 
-    # Method 2: session events
+    # Method 1: Binary PDF from user_content (local ADK)
     if not extracted_text:
-        extracted_text = _extract_pdf_from_session_events(tool_context)
+        extracted_text = _extract_pdf_from_user_message(tool_context)
         if extracted_text and len(extracted_text) > 200:
-            method = "session_events"
-            print(f"SUCCESS method 2 session_events: {len(extracted_text)} chars", flush=True)
+            method = "user_content_pdf"
+            print(f"SUCCESS user_content PDF: {len(extracted_text)} chars", flush=True)
 
-    # Method 3: artifacts
+    # Method 2: Artifacts (ADK Web)
     if not extracted_text:
         extracted_text = _extract_pdf_from_artifacts(tool_context)
         if extracted_text and len(extracted_text) > 200:
             method = "artifacts"
-            print(f"SUCCESS method 3 artifacts: {len(extracted_text)} chars", flush=True)
+            print(f"SUCCESS artifacts: {len(extracted_text)} chars", flush=True)
 
     if not extracted_text or len(extracted_text) <= 200:
-        print("ALL METHODS FAILED — no PDF text extracted", flush=True)
-        return {"status": "no_file_found", "message": "Could not extract PDF. Please upload a PDF file.", "pages": 0, "characters": 0}
+        print("No binary PDF found — agent will pass text via document_text parameter", flush=True)
+        return {"status": "no_file_found", "message": "Could not extract binary PDF. The document text will be passed directly to the review tool.", "pages": 0, "characters": 0}
 
     page_nums = re.findall(r'\[PAGE\s+(\d+)\]', extracted_text)
     max_page = max(int(p) for p in page_nums) if page_nums else 0
 
-    # Store to GCS
+    # Store to GCS + cache
     session_id = _get_session_id(tool_context)
     _upload_text_to_gcs(session_id, extracted_text)
-
-    # In-memory cache
     _DOCUMENT_CACHE.update({"text": extracted_text, "source": method, "pages": max_page, "session_id": session_id})
 
-    # Session state
     try:
         state = getattr(tool_context, 'state', None)
         if state is not None and hasattr(state, '__setitem__'):
@@ -461,7 +405,7 @@ def extract_document(tool_context: ToolContext = None) -> dict:
         pass
 
     logger.info("extract_document SUCCESS: %d pages, %d chars, method=%s", max_page, len(extracted_text), method)
-    return {"status": "success", "message": f"Extracted {max_page} pages ({len(extracted_text):,} characters).", "pages": max_page, "characters": len(extracted_text), "method": method, "session_id": session_id}
+    return {"status": "success", "message": f"Extracted {max_page} pages ({len(extracted_text):,} characters).", "pages": max_page, "characters": len(extracted_text), "method": method}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -609,22 +553,47 @@ def _parse_sub_response(resp, sub_info, max_page=0):
         return _fallback_sub(sub_info)
 
     if r.get("applicable", True) and r.get("score") is not None:
-        r["score"] = validate_score(float(r["score"]))
+        try:
+            r["score"] = validate_score(float(r["score"]))
+        except (ValueError, TypeError):
+            r["score"] = 0.0
 
-    if max_page > 0 and isinstance(r.get("pages"), list):
-        r["pages"] = [int(p) for p in r["pages"] if isinstance(p, (int, float)) and 1 <= int(p) <= max_page]
-        if r.get("evidence"):
-            r["evidence"] = re.sub(r'\[PAGE\s+(\d+)\]', lambda m: "[PAGE 1]" if int(m.group(1)) < 1 else f"[PAGE {max_page}]" if int(m.group(1)) > max_page else m.group(0), r["evidence"])
-    elif isinstance(r.get("pages"), list):
-        r["pages"] = [max(1, int(p)) for p in r["pages"] if isinstance(p, (int, float)) and int(p) >= 0]
+    # === STEP 1: Normalize ALL text fields to strings FIRST (prevents regex crash) ===
+    for f in ("evidence", "reasoning", "gap_to_next", "recommendation", "evidence_summary"):
+        val = r.get(f)
+        if val is None:
+            r[f] = ""
+        elif isinstance(val, list):
+            r[f] = "\n".join(str(e) for e in val)
+        elif not isinstance(val, str):
+            r[f] = str(val)
 
-    if "pages" in r and not isinstance(r["pages"], list):
+    # === STEP 2: Normalize pages ===
+    if isinstance(r.get("pages"), list):
+        r["pages"] = [max(1, min(int(p), max_page if max_page > 0 else 9999))
+                       for p in r["pages"] if isinstance(p, (int, float)) and int(p) >= 0]
+    elif r.get("pages") is not None:
         v = r["pages"]
         r["pages"] = [max(1, int(v))] if isinstance(v, (int, float)) and v > 0 else []
+    else:
+        r["pages"] = []
 
-    for f in ("evidence", "reasoning", "gap_to_next", "recommendation"):
-        if f in r and isinstance(r[f], str):
-            r[f] = re.sub(r'\[PAGE\s+0\]', '[PAGE 1]', r[f])
+    # === STEP 3: Clamp page references in text fields (safe — all strings now) ===
+    for f in ("evidence", "reasoning", "gap_to_next", "recommendation", "evidence_summary"):
+        val = r.get(f, "")
+        if not isinstance(val, str):
+            val = str(val)
+        # Clamp PAGE 0 → PAGE 1
+        val = re.sub(r'\[PAGE\s+0\]', '[PAGE 1]', val)
+        # Clamp out-of-range pages
+        if max_page > 0:
+            val = re.sub(
+                r'\[PAGE\s+(\d+)\]',
+                lambda m: "[PAGE 1]" if int(m.group(1)) < 1
+                          else f"[PAGE {max_page}]" if int(m.group(1)) > max_page
+                          else m.group(0),
+                val)
+        r[f] = val
 
     r.pop("rubric_walkthrough", None)
     return r
@@ -659,7 +628,10 @@ def _build_comment_prompt(name, subs):
     scores = [s.get("score", 0) for s in subs if s.get("applicable", True) and s.get("score") is not None]
     avg = sum(scores) / len(scores) if scores else 0
     lvl = "complete" if avg >= 1 else "high" if avg >= .75 else "moderate" if avg >= .5 else "low" if avg >= .25 else "absent"
-    return f"Write 1-2 sentence assessment for: {name}\n\n" + "\n".join(lines) + f"\n\nBand: {lvl.upper()}.\nStart with 'Provides {lvl} coverage'. Strengths then gaps.\nONLY comment text."
+    return (f"Write 1-2 sentence assessment for: {name}\n\n" + "\n".join(lines) +
+            f"\n\nBand: {lvl.upper()}.\nStart with 'Provides {lvl} coverage'.\n"
+            "Mention key strengths, then key gaps. Keep it concise.\n"
+            "CRITICAL: Output ONLY a plain text sentence. NO JSON, NO code blocks, NO markdown, NO quotes.")
 
 
 def _add_na_subs(results, cls, comp_subs):
@@ -738,7 +710,7 @@ def structural_review(
         # Check 5: Direct extraction
         if text_source == "agent" and tool_context:
             logger.info("Cache miss — direct extraction...")
-            ext = _extract_pdf_from_user_message(tool_context) or _extract_pdf_from_session_events(tool_context) or _extract_pdf_from_artifacts(tool_context)
+            ext = _extract_pdf_from_user_message(tool_context) or _extract_pdf_from_artifacts(tool_context)
             if ext and len(ext) > 500:
                 document_text, text_source = ext, "direct"
                 _upload_text_to_gcs(_get_session_id(tool_context), ext)
@@ -748,6 +720,22 @@ def structural_review(
 
         if not document_text or len(document_text.strip()) < 100:
             return {"error": True, "message": "No document text. Upload PDF and call extract_document first."}
+
+        # === Arabic / Non-English Translation ===
+        if _is_arabic(document_text):
+            logger.info("Arabic document detected (%d chars) — translating...", len(document_text))
+            print(f"Arabic document detected — translating to English...", flush=True)
+            try:
+                translated = _translate_arabic(document_text)
+                if translated and len(translated) > 200:
+                    document_text = translated
+                    logger.info("Translation complete: %d chars", len(document_text))
+                    print(f"Translation complete: {len(document_text)} chars", flush=True)
+                else:
+                    logger.warning("Translation returned insufficient text, using original")
+            except Exception as e:
+                logger.error("Translation failed: %s — using original Arabic text", e)
+                print(f"Translation failed: {e} — using original", flush=True)
 
         if entity_name in ("Unknown Entity", "", None):
             entity_name = _extract_entity_name(document_text) or "Unknown Entity"
@@ -786,7 +774,20 @@ def structural_review(
             csubs = _add_na_subs(csubs, classification, comp["sub_components"])
             try:
                 comment = _call_gemini(_build_comment_prompt(comp["name"], csubs), system_instruction=SYSTEM_INSTRUCTION).strip()
-                if comment.startswith('"') and comment.endswith('"'): comment = comment[1:-1]
+                # Strip JSON bleed-through (Gemini sometimes returns JSON instead of plain text)
+                if comment.startswith('{') or comment.startswith('['):
+                    try:
+                        parsed = json.loads(comment)
+                        if isinstance(parsed, dict):
+                            comment = str(next(iter(parsed.values()), comment))
+                        elif isinstance(parsed, list):
+                            comment = " ".join(str(x) for x in parsed)
+                    except json.JSONDecodeError:
+                        pass
+                if comment.startswith('```'):
+                    comment = re.sub(r'```\w*\n?', '', comment).strip()
+                if comment.startswith('"') and comment.endswith('"'):
+                    comment = comment[1:-1]
             except Exception:
                 scores = [s.get("score", 0) for s in csubs if s.get("applicable", True) and s.get("score") is not None]
                 avg = sum(scores) / len(scores) if scores else 0

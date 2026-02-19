@@ -1,5 +1,10 @@
 """Generate the markdown report from scored results."""
+from __future__ import annotations
+
 from datetime import datetime
+import json
+from typing import Any, Optional, Tuple
+
 from base_agent.logic.scoring import (
     calculate_display_band, band_label, calculate_overall_score,
     score_label,
@@ -59,6 +64,254 @@ def _score_bar(score_val: float) -> str:
     """Return a simple text-based visual indicator for a score."""
     filled = round(score_val * 4)  # 0-4 blocks
     return "[" + "█" * filled + "░" * (4 - filled) + "]"
+
+
+def _append_blockquote(lines: list[str], text: str) -> None:
+    """
+    Append a multi-line string as a proper markdown blockquote where *every*
+    line is prefixed with '> '. This prevents JSON / code fences / markdown
+    from "bleeding" out of the quote when text contains newlines.
+    """
+    if text is None:
+        return
+    txt = str(text).rstrip("\n")
+    if not txt.strip():
+        return
+    for ln in txt.splitlines():
+        # Keep empty lines inside blockquote for readability
+        lines.append("> " + ln if ln.strip() else ">")
+
+
+def _find_balanced_json_span(s: str, start: int) -> Optional[Tuple[int, int]]:
+    """
+    Find a balanced JSON object/array span in string s starting at or after `start`.
+    Returns (json_start, json_end_exclusive) if found, else None.
+    """
+    i = start
+    n = len(s)
+
+    while i < n and s[i].isspace():
+        i += 1
+    if i >= n or s[i] not in "{[":
+        return None
+
+    json_start = i
+    stack = []
+    stack.append("}" if s[i] == "{" else "]")
+
+    i += 1
+    in_str = False
+    esc = False
+
+    while i < n and stack:
+        ch = s[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                stack.append("}")
+            elif ch == "[":
+                stack.append("]")
+            elif ch in "}]":
+                if not stack or ch != stack[-1]:
+                    return None
+                stack.pop()
+        i += 1
+
+    if stack:
+        return None
+    return (json_start, i)
+
+
+def _extract_text_from_obj(obj: Any) -> str:
+    """
+    Extract the best human-readable text from a JSON-like object.
+    """
+    if obj is None:
+        return ""
+
+    if isinstance(obj, str):
+        return obj.strip()
+
+    if isinstance(obj, dict):
+        preferred_keys = [
+            "initiatives_and_projects_assessment",
+            "assessment_comment",
+            "comment",
+            "summary",
+            "assessment",
+            "reasoning",
+            "text",
+            "message",
+        ]
+        for k in preferred_keys:
+            v = obj.get(k)
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+
+        # fallback: first non-empty string value
+        for v in obj.values():
+            if isinstance(v, str) and v.strip():
+                return v.strip()
+        return ""
+
+    if isinstance(obj, list):
+        # join extracted strings from items
+        parts = []
+        for it in obj:
+            t = _extract_text_from_obj(it)
+            if t:
+                parts.append(t)
+        return "\n".join(parts)
+
+    return str(obj).strip()
+
+
+def _format_evidence_list(evidence_list: list[Any]) -> str:
+    """
+    Format evidence_list JSON array into clean evidence lines.
+    Expected item shape: {"quote": "...", "page": 11} but supports strings too.
+    """
+    out_lines: list[str] = []
+    for item in evidence_list:
+        if isinstance(item, dict):
+            quote = (item.get("quote") or "").strip()
+            page = item.get("page")
+            if quote and page is not None:
+                out_lines.append(f'Quote: "{quote}" [PAGE {page}]')
+            elif quote:
+                out_lines.append(f'Quote: "{quote}"')
+            else:
+                # fallback dict to string (rare)
+                out_lines.append(_extract_text_from_obj(item) or str(item))
+        elif isinstance(item, str):
+            out_lines.append(item.strip())
+        else:
+            out_lines.append(str(item))
+    return "\n".join([ln for ln in out_lines if ln.strip()])
+
+
+def _normalize_text(value: Any) -> str:
+    """
+    Normalize a value to clean text.
+    Handles:
+    - dict/list values (extract human string)
+    - strings containing fenced ```json blocks
+    - strings containing 'JSON' + inline JSON
+    - strings containing 'evidence_list: [ ... ]'
+    """
+    if value is None:
+        return ""
+
+    # If already structured, extract immediately
+    if isinstance(value, (dict, list)):
+        return _extract_text_from_obj(value)
+
+    if not isinstance(value, str):
+        return str(value).strip()
+
+    s = value.strip()
+    if not s:
+        return ""
+
+    # 1) Handle fenced JSON blocks: ```json ... ```
+    if "```json" in s:
+        start = s.find("```json")
+        after = start + len("```json")
+        end = s.find("```", after)
+        if end != -1:
+            payload = s[after:end].strip()
+            try:
+                obj = json.loads(payload)
+                extracted = _extract_text_from_obj(obj)
+                if extracted:
+                    # keep any surrounding non-json text too
+                    before = s[:start].strip()
+                    after_txt = s[end + 3 :].strip()
+                    parts = [p for p in [before, extracted, after_txt] if p]
+                    return "\n".join(parts).strip()
+            except Exception:
+                # If JSON parse fails, just remove the fence markers (still keep content)
+                before = s[:start].strip()
+                inner = payload
+                after_txt = s[end + 3 :].strip()
+                parts = [p for p in [before, inner, after_txt] if p]
+                return "\n".join(parts).strip()
+
+    # 2) Handle lines like:
+    # JSON
+    # { ... }
+    # Try to parse the first JSON object/array that appears after a 'JSON' marker
+    json_marker = re_find_json_marker(s)
+    if json_marker is not None:
+        jstart = json_marker
+        span = _find_balanced_json_span(s, jstart)
+        if span:
+            js, je = span
+            blob = s[js:je]
+            try:
+                obj = json.loads(blob)
+                extracted = _extract_text_from_obj(obj)
+                if extracted:
+                    before = s[:js].replace("JSON", "").strip()
+                    after_txt = s[je:].strip()
+                    parts = [p for p in [before, extracted, after_txt] if p]
+                    return "\n".join(parts).strip()
+            except Exception:
+                pass
+
+    # 3) Handle "evidence_list: [ ... ]"
+    if "evidence_list" in s and "[" in s:
+        idx = s.find("evidence_list")
+        bracket = s.find("[", idx)
+        if bracket != -1:
+            span = _find_balanced_json_span(s, bracket)
+            if span:
+                js, je = span
+                blob = s[js:je]
+                try:
+                    arr = json.loads(blob)
+                    if isinstance(arr, list):
+                        formatted = _format_evidence_list(arr)
+                        # keep any text before evidence_list label if exists
+                        before = s[:idx].strip()
+                        after_txt = s[je:].strip()
+                        parts = [p for p in [before, formatted, after_txt] if p]
+                        return "\n".join(parts).strip()
+                except Exception:
+                    pass
+
+    return s
+
+
+def re_find_json_marker(s: str) -> Optional[int]:
+    """
+    Find the start index of a JSON object/array that is likely introduced by a 'JSON' label.
+    Returns index of '{' or '[' if found, else None.
+    """
+    # Prefer a literal 'JSON' line marker if present
+    # e.g. "JSON\n{...}"
+    pos = s.find("JSON")
+    if pos != -1:
+        # look for first { or [ after 'JSON'
+        brace = s.find("{", pos)
+        bracket = s.find("[", pos)
+        candidates = [c for c in [brace, bracket] if c != -1]
+        if candidates:
+            return min(candidates)
+
+    # fallback: if the whole string is a JSON object/array
+    stripped = s.lstrip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        return s.find(stripped[0])
+    return None
 
 
 def generate_report(
@@ -149,9 +402,10 @@ def generate_report(
         lines.append(f"| **{label} ({band})** | {'Yes' if has_content else 'No'} |")
         lines.append("")
 
-        # Consolidated comment
-        if comp.get("comment"):
-            lines.append(f"> {comp['comment']}")
+        # Consolidated comment (must support multi-line safely)
+        comp_comment = _normalize_text(comp.get("comment", ""))
+        if comp_comment:
+            _append_blockquote(lines, comp_comment)
             lines.append("")
 
         # Sub-criteria details
@@ -169,7 +423,6 @@ def generate_report(
                 lines.append("")
                 continue
 
-            # Guard against explicit None scores
             score_val = _safe_score(sub)
             label_str = score_label(score_val)
             pct = int(score_val * 100)
@@ -182,31 +435,34 @@ def generate_report(
             lines.append(f"**Score:** {bar} **{label_str} ({pct}%)** &nbsp;&nbsp;|&nbsp;&nbsp; **Pages:** {pages_str}")
             lines.append("")
 
-            if sub.get("evidence"):
+            evidence_txt = _normalize_text(sub.get("evidence", ""))
+            if evidence_txt:
                 lines.append("**Evidence:**")
                 lines.append("")
-                # Put evidence in a blockquote for visual separation
-                for ev_line in sub["evidence"].split("\n"):
-                    lines.append(f"> {ev_line}")
+                for ev_line in evidence_txt.splitlines():
+                    lines.append(f"> {ev_line}" if ev_line.strip() else ">")
                 lines.append("")
 
-            if sub.get("reasoning"):
+            reasoning_txt = _normalize_text(sub.get("reasoning", ""))
+            if reasoning_txt:
                 lines.append("**Reasoning:**")
                 lines.append("")
-                lines.append(sub["reasoning"])
+                lines.append(reasoning_txt)
                 lines.append("")
 
-            if sub.get("gap_to_next") and score_val < 1.0:
+            gap_txt = _normalize_text(sub.get("gap_to_next", ""))
+            if gap_txt and score_val < 1.0:
                 lines.append(f"**Gap to Maximum Score (Complete — 100%):**")
                 lines.append("")
-                lines.append(f"> {sub['gap_to_next']}")
+                _append_blockquote(lines, gap_txt)
                 lines.append("")
 
-            if sub.get("recommendation") and score_val < 1.0:
-                rec_text = _strip_mandatory_prefix(sub["recommendation"])
+            rec_txt = _normalize_text(sub.get("recommendation", ""))
+            if rec_txt and score_val < 1.0:
+                rec_txt = _strip_mandatory_prefix(rec_txt)
                 lines.append(f"**Recommendation [MANDATORY]:**")
                 lines.append("")
-                lines.append(f"> {rec_text}")
+                _append_blockquote(lines, rec_txt)
                 lines.append("")
 
     # ─────────────────────────────────────────────
@@ -231,7 +487,7 @@ def generate_report(
             pct = int(score_val * 100)
             pages = sub.get("pages", [])
             pages_str = ", ".join(str(p) for p in pages) if pages else "—"
-            summary = sub.get("evidence_summary", "")
+            summary = _normalize_text(sub.get("evidence_summary", ""))
             lines.append(f"| {sub_id} {sub_name} | {pct}% | {pages_str} | {summary} |")
 
     lines.append("")
@@ -249,12 +505,13 @@ def generate_report(
     for comp in component_results:
         for sub in comp.get("sub_results", []):
             score_val = _safe_score(sub)
-            if sub.get("applicable", True) and score_val < 1.0 and sub.get("recommendation"):
+            rec_txt = _normalize_text(sub.get("recommendation", ""))
+            if sub.get("applicable", True) and score_val < 1.0 and rec_txt:
                 rec_num += 1
                 sub_id = sub["sub_component_id"]
                 sub_name = sub["sub_component_name"]
                 pct = int(score_val * 100)
-                rec_text = _strip_mandatory_prefix(sub["recommendation"]).replace("\n", " ")
+                rec_text = _strip_mandatory_prefix(rec_txt).replace("\n", " ")
                 lines.append(f"**{rec_num}. [{sub_id} {sub_name}]** — Current: {pct}%")
                 lines.append("")
                 lines.append(f"> {rec_text}")

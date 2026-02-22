@@ -17,6 +17,21 @@ def load_questions() -> dict:
     return load_config_json("questions.json")
 
 
+def _resolve_rubric(scoring: dict, classification: str) -> dict:
+    """Resolve a scoring dict to the classification-specific rubric.
+
+    Supports two formats:
+      - Nested (new):  {"entity": {"0.0": "...", ...}, "sectoral": {...}, ...}
+      - Flat (legacy):  {"0.0": "...", "0.25": "...", ...}
+
+    Returns the flat rubric dict for the given classification.
+    """
+    classification = classification.lower().strip()
+    if classification in scoring:
+        return scoring[classification]
+    return scoring
+
+
 def load_checklist(classification: str) -> dict:
     """Return the full checklist from questions.json (backward-compatible interface)."""
     questions = load_questions()
@@ -27,7 +42,13 @@ def load_checklist(classification: str) -> dict:
 
 
 def get_applicable_sub_components(classification: str) -> list[dict]:
-    """Return a flat list of applicable sub-components with their rubrics and questions."""
+    """Return a flat list of applicable sub-components with their rubrics and questions.
+
+    Items in 'applicable' are always scored.
+    Items in 'conditional' are included but marked so the LLM can exclude
+    them if no relevant content is found in the document.
+    Items in 'not_applicable' are excluded entirely.
+    """
     questions = load_questions()
     applicability = load_applicability(classification)
     applicable_ids = set(applicability["applicable"])
@@ -37,6 +58,8 @@ def get_applicable_sub_components(classification: str) -> list[dict]:
     for component in questions["components"]:
         for sub in component["sub_components"]:
             sub_id = sub["id"]
+            rubric = _resolve_rubric(sub["scoring"], classification)
+
             if sub_id in applicable_ids:
                 result.append({
                     "component_id": component["id"],
@@ -44,7 +67,7 @@ def get_applicable_sub_components(classification: str) -> list[dict]:
                     "sub_component_id": sub_id,
                     "sub_component_name": sub["name"],
                     "question": sub.get("question", ""),
-                    "rubric": sub["scoring"],
+                    "rubric": rubric,
                     "is_conditional": False,
                 })
             elif sub_id in conditional:
@@ -54,7 +77,7 @@ def get_applicable_sub_components(classification: str) -> list[dict]:
                     "sub_component_id": sub_id,
                     "sub_component_name": sub["name"],
                     "question": sub.get("question", ""),
-                    "rubric": sub["scoring"],
+                    "rubric": rubric,
                     "is_conditional": True,
                     "conditional_rule": conditional[sub_id],
                 })
@@ -76,8 +99,9 @@ def get_components_with_subs(classification: str) -> list[dict]:
             if sub["id"] in all_relevant:
                 sub_copy = dict(sub)
                 sub_copy["is_conditional"] = sub["id"] in conditional
-                if "scoring" in sub_copy and "rubric" not in sub_copy:
-                    sub_copy["rubric"] = sub_copy["scoring"]
+                resolved = _resolve_rubric(sub["scoring"], classification)
+                sub_copy["rubric"] = resolved
+                sub_copy["scoring"] = resolved
                 subs.append(sub_copy)
         if subs:
             result.append({

@@ -1,45 +1,89 @@
 {
-  "_README": "This file contains all evaluation criteria for the NPC Structural Checklist Review. Each sub-criteria has a name, question, and 5 scoring levels. The client can edit any text in this file. The scoring levels must stay as 0.0, 0.25, 0.5, 0.75, and 1.0 - do not change the score values, only the descriptions.",
+  "_README": "This file contains all evaluation criteria for the NPC Structural Checklist Review. Each sub-criteria has classification-specific scoring rubrics (entity, sectoral, thematic) with concrete examples. The scoring levels must stay as 0.0, 0.25, 0.5, 0.75, and 1.0 - do not change the score values, only the descriptions.",
   "components": [
     {
       "id": 1,
-      "name": "Baselines, Benchmarks, & Trends",
+      "name": "Baseline, Benchmarks & Trends",
       "description": "Assesses whether the strategy document includes a thorough analysis of the current state, comparative benchmarking, and forward-looking trends.",
       "sub_components": [
         {
           "id": "1.1",
           "name": "Diagnostic (SWOT, gap analysis, quantified baseline)",
-          "question": "Does the document provide a structured diagnostic of the current state, including a SWOT analysis, gap analysis, and quantified baseline data?",
+          "question": "Does it provide a structured diagnostic, such as a SWOT analysis, explicit gap analysis, and quantified baseline (sector performance, institutional setup, SLAs, etc.)?",
           "scoring": {
-            "0.0": "No diagnostic, SWOT, gap analysis, or baseline data is present in the document.",
-            "0.25": "Very high-level or vague mention of current state without structured analysis or data.",
-            "0.5": "Diagnostic exists (e.g., qualitative SWOT) but is incomplete - missing quantified baselines or gap analysis.",
-            "0.75": "Well-developed diagnostic with quantified baselines but minor gaps in depth or coverage.",
-            "1.0": "Comprehensive diagnostic with fully quantified baselines, structured SWOT, and detailed gap analysis."
+            "entity": {
+              "0.0": "No diagnostic.",
+              "0.25": "Very high-level description e.g. single sentence that says 'a baseline assessment was conducted' or 'services are improving', without figures, insights, or structure.",
+              "0.5": "Diagnostic exists, but either SWOT, gap analysis, or quantified baseline is missing, and institutional excellence (SLAs, digitization, customer service, workforce) is not addressed.",
+              "0.75": "Diagnostic includes SWOT, gap analysis, incl. institutional excellence coverage, but insights are thin and not comprehensive.",
+              "1.0": "Comprehensive diagnostic with quantified baseline, SWOT, gap analysis, and full institutional excellence dimensions, supported by clear insights."
+            },
+            "sectoral": {
+              "0.0": "No diagnostic.",
+              "0.25": "Very high-level description e.g. single sentence that says 'a baseline assessment was conducted' or 'services are improving', without figures, insights, or structure.",
+              "0.5": "Diagnostic provided but either SWOT, gap analysis, or quantified baseline missing, and institutional excellence not included.",
+              "0.75": "Diagnostic structured with baseline and partial SWOT/gap, institutional excellence partially covered.",
+              "1.0": "Full diagnostic with quantified baseline, SWOT, gap analysis, and institutional excellence fully included."
+            },
+            "thematic": {
+              "0.0": "No diagnostic.",
+              "0.25": "Very high-level description e.g. single sentence that says 'a baseline assessment was conducted' or 'services are improving', without figures, insights, or structure.",
+              "0.5": "Diagnostic provided but either SWOT, gap analysis, or quantified baseline missing, and institutional excellence not included.",
+              "0.75": "Diagnostic structured with baseline and partial SWOT/gap, institutional excellence partially covered.",
+              "1.0": "Full diagnostic with quantified baseline, SWOT, gap analysis, and institutional excellence fully included."
+            }
           }
         },
         {
           "id": "1.2",
           "name": "Benchmarks & Comparisons",
-          "question": "Does the document include benchmarking against peer countries or leading institutions, with comparative data and lessons learned?",
+          "question": "Does it include benchmarks and comparisons against international, regional, or peer benchmarks to position performance?",
           "scoring": {
-            "0.0": "No benchmarking or comparative analysis present.",
-            "0.25": "Vague mention of peer countries or comparators without any data or specifics.",
-            "0.5": "Some benchmarking present but limited in scope - few comparators or incomplete data.",
-            "0.75": "Good benchmarking with multiple comparators and data, minor gaps in lessons learned.",
-            "1.0": "Comprehensive benchmarking with regional/international comparators, detailed data, and documented lessons learned."
+            "entity": {
+              "0.0": "No benchmarks.",
+              "0.25": "Benchmarks only referenced vaguely (e.g., 'as in other countries, benchmarks were conducted'), without data or comparisons.",
+              "0.5": "Some benchmarks provided, but incomplete (e.g., either regional or international covered, not both; or only one metric shown); limited insights, no institutional excellence.",
+              "0.75": "Regional and international benchmarks included, but gaps in coverage (e.g., key peers missing, insights not fully drawn, methodology unclear); institutional excellence only partially covered.",
+              "1.0": "Full set of benchmarks across regional and international peers, well-structured with insights and clear methodology, including institutional excellence (e.g. SLAs, service quality, digitization)."
+            },
+            "sectoral": {
+              "0.0": "No benchmarks.",
+              "0.25": "Benchmarks only referenced vaguely (e.g., 'as in other countries, benchmarks were conducted'), without data or comparisons.",
+              "0.5": "Some benchmarks provided, but incomplete (e.g., either regional or international covered, not both; or only one metric shown); limited insights, no institutional excellence.",
+              "0.75": "Regional and international benchmarks included, but gaps in coverage (e.g., key peers missing, insights not fully drawn, methodology unclear); institutional excellence only partially covered.",
+              "1.0": "Full set of benchmarks across regional and international peers, well-structured with insights and clear methodology, including institutional excellence (e.g., SLAs, service quality, digitization)."
+            },
+            "thematic": {
+              "0.0": "No benchmarks.",
+              "0.25": "Benchmarks only referenced vaguely (e.g., 'as in other countries, benchmarks were conducted'), without data or comparisons.",
+              "0.5": "Some benchmarks provided, but incomplete (e.g., either regional or international covered, not both; or only one metric shown); limited insights, no institutional excellence.",
+              "0.75": "Regional and international benchmarks included, but gaps in coverage (e.g., key peers missing, insights not fully drawn, methodology unclear); institutional excellence only partially covered.",
+              "1.0": "Full set of benchmarks across regional and international peers, well-structured with insights and clear methodology, including institutional excellence (e.g., SLAs, service quality, digitization)."
+            }
           }
         },
         {
           "id": "1.3",
           "name": "Trends",
-          "question": "Does the document identify and analyze global, regional, and sectoral trends, and integrate them into the strategic direction?",
+          "question": "Does it identify trends?",
           "scoring": {
-            "0.0": "No trends analysis present.",
-            "0.25": "Brief or vague mention of trends without analysis or linkage to strategy.",
-            "0.5": "Some trends identified but analysis is surface-level or not linked to strategic direction.",
-            "0.75": "Good trends analysis covering global/regional trends with mostly clear linkage to strategy.",
-            "1.0": "Comprehensive trends analysis (global, regional, sectoral) fully integrated into strategic direction."
+            "entity": {
+              "0.0": "Trends are not required for Entity classification."
+            },
+            "sectoral": {
+              "0.0": "No trends included.",
+              "0.25": "Very broad statement e.g. 'tourism is growing globally', without context.",
+              "0.5": "Some sector trends described but incomplete, e.g., global demand shifts mentioned, but missing national context or impact explanation.",
+              "0.75": "Global and national sector trends identified with some explanation, but coverage/impact not comprehensive.",
+              "1.0": "Comprehensive coverage of global and national trends with clear implications for the sector."
+            },
+            "thematic": {
+              "0.0": "No trends included.",
+              "0.25": "Generic reference e.g. 'AI is advancing fast' without detail.",
+              "0.5": "Some global thematic trends described (e.g., global adoption rates) but missing national context or impact explanation.",
+              "0.75": "Global and national thematic trends identified, but analysis/explanation incomplete.",
+              "1.0": "Comprehensive coverage of global and national thematic trends with clear explanation and impact analysis."
+            }
           }
         }
       ]
@@ -52,37 +96,85 @@
         {
           "id": "2.1",
           "name": "Vision",
-          "question": "Does the document contain a clear, ambitious vision statement that is aligned with Qatars national direction (QNV 2030, NDS3)?",
+          "question": "Does the strategy articulate a future-oriented, aspirational vision that provides a clear long-term direction for the sector/entity/thematic area?",
           "scoring": {
-            "0.0": "No vision statement present.",
-            "0.25": "Vision exists but is vague, generic, or not aligned with national direction.",
-            "0.5": "Vision is stated but lacks ambition, specificity, or clear national alignment.",
-            "0.75": "Clear and ambitious vision with good national alignment but minor clarity gaps.",
-            "1.0": "Clear, ambitious, measurable vision fully aligned with Qatar national direction (QNV 2030, NDS3)."
+            "entity": {
+              "0.0": "No vision included.",
+              "0.25": "Generic aspiration not tied to the entity's mandate, e.g. 'to be the best authority'.",
+              "0.5": "Vision describes the entity's function, not a future aspiration e.g. 'to regulate real estate markets'.",
+              "0.75": "Future-oriented but broad or generic e.g., 'to be a leader in efficient government services'.",
+              "1.0": "Comprehensive, mandate-specific, and transformational vision e.g. 'to be a globally recognized regulator ensuring transparent, efficient, and citizen-centered real estate markets by 2030'."
+            },
+            "sectoral": {
+              "0.0": "No vision statement.",
+              "0.25": "Vision statement exists but is generic e.g., 'world-class sector'.",
+              "0.5": "Vision reflects sectoral ambitions but lacks specificity e.g., omits private sector, sustainability, or digitization.",
+              "0.75": "Future-oriented and sector-specific but narrow e.g., 'to provide modern transport systems for all citizens'.",
+              "1.0": "Comprehensive, sector-wide, and transformational e.g., 'to create a world-class, integrated, and sustainable transport system that connects people, drives economic growth, and enhances quality of life by 2030'."
+            },
+            "thematic": {
+              "0.0": "No vision statement.",
+              "0.25": "Very broad and generic (e.g., 'to adopt new technologies').",
+              "0.5": "Vision addresses the theme narrowly (e.g., 'to use AI in government services').",
+              "0.75": "Future-oriented but generic and lacking enablers (e.g., 'to make Qatar a leader in digital innovation').",
+              "1.0": "Comprehensive, ecosystem-driven, and globally positioned (e.g., 'to position Qatar as a global hub for responsible AI and digital innovation, enabling sustainable growth, competitiveness, and societal benefit by 2030')."
+            }
           }
         },
         {
           "id": "2.2",
           "name": "Mission",
-          "question": "Does the document contain a mission statement that clearly articulates purpose, scope, and target beneficiaries?",
+          "question": "Does the strategy provide a mission statement that defines the entity's core focus area, purpose, and role, distinct from the vision?",
           "scoring": {
-            "0.0": "No mission statement present.",
-            "0.25": "Mission exists but is vague or does not articulate purpose and scope.",
-            "0.5": "Mission is stated but incomplete - missing either purpose, scope, or target beneficiaries.",
-            "0.75": "Good mission statement with clear purpose and scope, minor gaps in specificity.",
-            "1.0": "Comprehensive mission clearly articulating purpose, scope, and target beneficiaries."
+            "entity": {
+              "0.0": "No mission included.",
+              "0.25": "Generic description with no link to mandate e.g. 'to serve the country'.",
+              "0.5": "Mission reflects basic function but lacks clarity on purpose e.g. 'to regulate real estate transactions'.",
+              "0.75": "Mission is clear and mandate-linked but too operational e.g., 'to ensure compliance with licensing rules'.",
+              "1.0": "Comprehensive and mandate-specific mission defining purpose and role."
+            },
+            "sectoral": {
+              "0.0": "No mission included.",
+              "0.25": "Generic phrase with no sector scope e.g. 'to develop the sector'.",
+              "0.5": "Mission captures one sectoral role only e.g. 'to increase healthcare access'.",
+              "0.75": "Mission is clear and sector-focused but narrow e.g. 'to provide accessible transport services'.",
+              "1.0": "Comprehensive mission defining the sector's purpose across stakeholders e.g. 'to ensure safe, sustainable, and high-quality healthcare services that improve population well-being'."
+            },
+            "thematic": {
+              "0.0": "No mission included.",
+              "0.25": "Very generic description of the theme (e.g. 'to support innovation').",
+              "0.5": "Mission mentions the theme but lacks clarity on role (e.g. 'to adopt AI in government services').",
+              "0.75": "Mission is clear and theme-focused but narrow (e.g. 'to promote digital services across ministries').",
+              "1.0": "Comprehensive mission defining thematic purpose and role within the ecosystem (e.g. 'to accelerate national AI adoption through responsible policy, talent development, and cross-sector partnerships')."
+            }
           }
         },
         {
           "id": "2.3",
           "name": "Values",
-          "question": "Does the document define values that are aligned with the entity/sector mandate and are operationally relevant?",
+          "question": "Does the strategy provide clear values that align with the entity's mandate?",
           "scoring": {
-            "0.0": "No values defined.",
-            "0.25": "Values mentioned but generic and not linked to entity/sector mandate.",
-            "0.5": "Values defined but only partially aligned with mandate or lacking operational relevance.",
-            "0.75": "Values well-defined and mostly aligned with mandate, minor gaps in operational linkage.",
-            "1.0": "Values clearly defined, fully aligned with mandate, and operationally relevant."
+            "entity": {
+              "0.0": "No values included.",
+              "0.25": "Values mentioned vaguely e.g. 'integrity, service' but generic and not tied to the entity's role.",
+              "0.5": "Values are listed but incomplete or not linked to mandate/institutional excellence, e.g., missing relevance to transparency, customer service, digitization.",
+              "0.75": "Values are clear, relevant, and aligned to the mandate, but not fully integrated into the strategy (e.g., listed but not reflected in objectives or operations).",
+              "1.0": "Comprehensive set of mandate-specific values that directly support the entity's role and institutional excellence, clearly embedded in the strategy."
+            },
+            "sectoral": {
+              "0.0": "Values are not required for Sectoral classification. If included, leverage entity strategy review rating.",
+              "0.25": "Values are not required for Sectoral classification. If included, leverage entity strategy review rating.",
+              "0.5": "Values are not required for Sectoral classification. If included, leverage entity strategy review rating.",
+              "0.75": "Values are not required for Sectoral classification. If included, leverage entity strategy review rating.",
+              "1.0": "Values are not required for Sectoral classification. If included, leverage entity strategy review rating."
+            },
+            "thematic": {
+              "0.0": "Values are not required for Thematic classification. If included, leverage entity strategy review rating.",
+              "0.25": "Values are not required for Thematic classification. If included, leverage entity strategy review rating.",
+              "0.5": "Values are not required for Thematic classification. If included, leverage entity strategy review rating.",
+              "0.75": "Values are not required for Thematic classification. If included, leverage entity strategy review rating.",
+              "1.0": "Values are not required for Thematic classification. If included, leverage entity strategy review rating."
+            }
           }
         }
       ]
@@ -95,49 +187,113 @@
         {
           "id": "3.1",
           "name": "Strategic Objectives / Pillars",
-          "question": "Does the document define strategic objectives or pillars that are measurable and clearly linked to the vision and mission?",
+          "question": "Are there well-defined strategic objectives or pillars that cover the strategy's scope?",
           "scoring": {
-            "0.0": "No strategic objectives or pillars defined.",
-            "0.25": "Objectives mentioned but vague, not measurable, or poorly structured.",
-            "0.5": "Objectives defined but some lack measurability or clear linkage to vision.",
-            "0.75": "Well-defined objectives/pillars with mostly clear measurability, minor gaps.",
-            "1.0": "Comprehensive, measurable strategic objectives/pillars fully linked to vision and mission."
+            "entity": {
+              "0.0": "No strategic objectives or pillars included.",
+              "0.25": "Very generic objectives not tied to mandate e.g., 'to improve services'.",
+              "0.5": "Some objectives included but incomplete and not structured under clear pillars; institutional excellence (e.g., SLAs, digitization) missing.",
+              "0.75": "Objectives clear and mandate-linked, and partly structured under pillars, but coverage narrow or unbalanced (e.g., only efficiency and licensing mentioned).",
+              "1.0": "Comprehensive, mandate-specific pillars clearly defined, with strategic objectives stemming from them, covering all institutional excellence dimensions."
+            },
+            "sectoral": {
+              "0.0": "No strategic objectives or pillars included.",
+              "0.25": "Broad, unstructured phrases without sectoral scope e.g. 'to develop the sector'.",
+              "0.5": "Some objectives included but not structured under sector-wide pillars; coverage limited to one aspect (e.g., demand only).",
+              "0.75": "Pillars included with objectives stemming from them, sector-specific but missing ecosystem balance (e.g., innovation or regulation left out).",
+              "1.0": "Comprehensive sector-wide pillars with clear objectives flowing from them, covering e.g. private sector engagement, regulation, innovation, sustainability, and institutional excellence."
+            },
+            "thematic": {
+              "0.0": "No strategic objectives or pillars included.",
+              "0.25": "Very generic objectives not tied to the theme e.g. 'to promote innovation'.",
+              "0.5": "Some theme-related objectives included but not structured under thematic pillars; narrow scope (e.g., adoption only).",
+              "0.75": "Clear thematic pillars with objectives stemming from them, but missing important enablers (e.g., human capital, private sector).",
+              "1.0": "Comprehensive thematic pillars with objectives cascading from them, covering e.g. adoption, policy/regulation, human capital, ecosystem, and private sector participation."
+            }
           }
         },
         {
           "id": "3.2",
           "name": "KPI Definition",
-          "question": "Does the document define KPIs with full methodology, measurement cadence, data source, and calculation method?",
+          "question": "Are KPIs defined for each strategic objective?",
           "scoring": {
-            "0.0": "No KPIs defined.",
-            "0.25": "KPIs listed but without methodology, measurement cadence, or data source.",
-            "0.5": "KPIs defined with some methodology but missing cadence, data source, or calculation details.",
-            "0.75": "Good KPI definitions with methodology and cadence, minor gaps in data source or clarity.",
-            "1.0": "Comprehensive KPI definitions with full methodology, measurement cadence, data source, and calculation method."
+            "entity": {
+              "0.0": "No KPIs included.",
+              "0.25": "Very generic KPIs, not linked to objectives e.g. 'improve services'.",
+              "0.5": "Some KPIs exist but incomplete, e.g. potential to add new KPIs, not defined for each objective, or missing institutional excellence metrics (e.g., SLAs, customer service).",
+              "0.75": "KPIs linked to most objectives, but not consistently or lacking clarity (e.g., definitions vague, no ownership).",
+              "1.0": "KPIs clearly defined for all objectives, including institutional excellence, with consistent coverage."
+            },
+            "sectoral": {
+              "0.0": "No KPIs included.",
+              "0.25": "Very generic KPIs e.g. 'increase demand', with no link to objectives.",
+              "0.5": "KPIs exist but cover only some sector objectives (e.g., demand but not supply or regulation).",
+              "0.75": "KPIs linked to most objectives, but not consistently or lacking clarity (e.g., definitions vague, no ownership).",
+              "1.0": "KPIs defined for all objectives, covering full sector scope (e.g., demand, supply, regulation, innovation, sustainability, institutional excellence)."
+            },
+            "thematic": {
+              "0.0": "No KPIs included.",
+              "0.25": "Very generic KPIs not tied to theme e.g. 'increase innovation'.",
+              "0.5": "Some theme-related KPIs, but narrow (e.g., adoption rate only, missing enablers like human capital).",
+              "0.75": "KPIs linked to most objectives, but not consistently or lacking clarity (e.g., definitions vague, no ownership).",
+              "1.0": "KPIs comprehensively defined, covering full scope incl. enablers (e.g. policy, adoption, human capital, private sector, ecosystem)."
+            }
           }
         },
         {
           "id": "3.3",
           "name": "Baselines & Targets",
-          "question": "Does the document provide quantified baselines and time-bound targets for all KPIs?",
+          "question": "Do KPIs include baselines and targets?",
           "scoring": {
-            "0.0": "No baselines or targets provided for KPIs.",
-            "0.25": "Some targets exist but no baselines, or baselines without targets.",
-            "0.5": "Partial baselines and targets - some KPIs covered, others missing.",
-            "0.75": "Most KPIs have baselines and targets, minor gaps in coverage or time-bounding.",
-            "1.0": "All KPIs have quantified baselines and time-bound targets with clear milestones."
+            "entity": {
+              "0.0": "No baselines or targets.",
+              "0.25": "Less than majority of baseline/target are included.",
+              "0.5": "Some baselines and targets included, but incomplete (e.g., not for all KPIs, institutional excellence missing).",
+              "0.75": "Baselines and targets provided for most KPIs, but some gaps remain or definitions unclear.",
+              "1.0": "Clear baselines and targets provided for all KPIs, including institutional excellence (SLAs, digitization, customer service)."
+            },
+            "sectoral": {
+              "0.0": "No baselines or targets.",
+              "0.25": "Less than majority of baseline/target are included.",
+              "0.5": "Some baselines/targets included but incomplete (e.g., demand growth baseline but no supply/regulation).",
+              "0.75": "Baselines and targets provided for most KPIs, but some gaps remain in methodology/definitions unclear.",
+              "1.0": "Baselines and targets clearly provided for all sector KPIs incl. institutional excellence."
+            },
+            "thematic": {
+              "0.0": "No baselines or targets.",
+              "0.25": "Less than majority of baseline/target are included.",
+              "0.5": "Some baselines and targets included, but incomplete (e.g., not for all KPIs, institutional excellence missing).",
+              "0.75": "Baselines and targets provided for most KPIs, but some gaps remain or definitions unclear.",
+              "1.0": "Clear baselines and targets provided for all KPIs, including institutional excellence (SLAs, digitization, customer service)."
+            }
           }
         },
         {
           "id": "3.4",
           "name": "SMART Criteria",
-          "question": "Are KPIs designed to meet SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)?",
+          "question": "Are KPIs SMART (Specific, Measurable, Achievable, Relevant, Time-bound)?",
           "scoring": {
-            "0.0": "No measurable KPIs present.",
-            "0.25": "KPIs listed but vague and do not meet SMART criteria.",
-            "0.5": "Some KPIs are measurable, but others are too broad or lacking calculation methodology.",
-            "0.75": "Most KPIs are SMART but with minor issues (e.g., relevant but not time-bound, or measurable but no calculation method).",
-            "1.0": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence."
+            "entity": {
+              "0.0": "No measurable KPIs.",
+              "0.25": "KPIs listed but vague e.g. 'improve services'.",
+              "0.5": "Some KPIs measurable, but others too broad or lacking calculation methodology.",
+              "0.75": "Most KPIs are SMART but with minor issues (e.g., relevant but not time-bound, or measurable but no calculation method).",
+              "1.0": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence."
+            },
+            "sectoral": {
+              "0.0": "No measurable KPIs.",
+              "0.25": "KPIs vague e.g. 'increase sector efficiency'.",
+              "0.5": "Some sector KPIs are SMART, but many lack specificity or calculation method.",
+              "0.75": "Most KPIs fully SMART, with baselines, targets, calculation methodology.",
+              "1.0": "All sector KPIs fully SMART, with baselines, targets, calculation methodology, and linked to sectoral objectives."
+            },
+            "thematic": {
+              "0.0": "No measurable KPIs.",
+              "0.25": "Very generic KPIs e.g. 'promote innovation'.",
+              "0.5": "Some thematic KPIs measurable, but many lack specificity, methodology, or alignment.",
+              "0.75": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence.",
+              "1.0": "All thematic KPIs fully SMART, with baselines, targets, calculation methodology."
+            }
           }
         }
       ]
@@ -150,37 +306,73 @@
         {
           "id": "4.1",
           "name": "Internal Stakeholder Ecosystem",
-          "question": "Does the document describe a clear internal governance structure with committees, roles, responsibilities, and decision-making flows?",
+          "question": "Is the internal stakeholder ecosystem defined (units, committees, roles)?",
           "scoring": {
-            "0.0": "No internal governance structure described.",
-            "0.25": "Brief mention of governance without roles, committees, or decision-making structure.",
-            "0.5": "Some governance elements described but incomplete - missing roles or decision-making clarity.",
-            "0.75": "Good internal governance with committees and roles, minor gaps in decision-making flows.",
-            "1.0": "Comprehensive internal governance with clear committees, roles, responsibilities, and decision-making flows."
+            "entity": {
+              "0.0": "No internal governance described e.g. no mention of units.",
+              "0.25": "Vague mention only e.g. 'a ecosystem was defined' or 'the authority will manage implementation' with no structure.",
+              "0.5": "Some units/committees named but no roles outlined e.g. Licensing Unit and Compliance Committee listed without responsibilities.",
+              "0.75": "Units/committees described with roles, but incomplete e.g. Licensing and Compliance Committees roles given, but HR or IT support missing.",
+              "1.0": "Clear structure with defined units/committees and roles e.g. Strategy defines Licensing Unit (approvals), Compliance Committee (monitoring), etc."
+            },
+            "sectoral": {
+              "0.0": "No internal governance described e.g. Transport strategy has no mention of who oversees the strategy.",
+              "0.25": "Vague mention e.g. 'the ministry will oversee the strategy' without naming a responsible unit.",
+              "0.5": "A unit or committee responsible for the strategy is named, but no roles described e.g. 'Strategy Unit' listed, but no mandate given.",
+              "0.75": "Committee or unit responsible for the strategy described with roles, but scope incomplete e.g. 'Transport Strategy Committee' defined for policy oversight, but no mention of monitoring or evaluation.",
+              "1.0": "Clear structure defined inside the ministry with a unit/committee dedicated to the strategy, with roles for design, implementation follow-up, and monitoring e.g. Sector Strategy Department oversees development, monitors KPIs, and coordinates with other stakeholders."
+            },
+            "thematic": {
+              "0.0": "Internal governance not required for Thematic classification."
+            }
           }
         },
         {
           "id": "4.2",
           "name": "External Stakeholder Ecosystem",
-          "question": "Does the document identify external stakeholders with clear roles, responsibilities, and engagement mechanisms?",
+          "question": "Is the external stakeholder ecosystem defined (partners, other entities)?",
           "scoring": {
-            "0.0": "No external stakeholders identified.",
-            "0.25": "External stakeholders briefly mentioned without roles or engagement model.",
-            "0.5": "Some external stakeholders mapped but roles or engagement mechanisms are incomplete.",
-            "0.75": "Good external stakeholder mapping with roles, minor gaps in engagement mechanisms.",
-            "1.0": "Comprehensive external stakeholder ecosystem with clear roles, responsibilities, and engagement model."
+            "entity": {
+              "0.0": "External governance not required for Entity classification."
+            },
+            "sectoral": {
+              "0.0": "No external stakeholder ecosystem defined e.g. health strategy does not mention any stakeholders outside the ministry.",
+              "0.25": "Generic statement only e.g. 'the ministry will collaborate with partners'.",
+              "0.5": "External stakeholders listed, but no roles described e.g. 'Private hospitals and regulators' named, but responsibilities unclear.",
+              "0.75": "Stakeholders listed with roles partly described/scope incomplete e.g. Ministry sets policy, regulator enforces, but municipal role not defined.",
+              "1.0": "Comprehensive external stakeholder definition and defined roles e.g. Ministry sets policy, regulator licenses, municipalities provide infrastructure, private sector delivers services."
+            },
+            "thematic": {
+              "0.0": "No external ecosystem described e.g. AI strategy does not identify external players.",
+              "0.25": "Generic statement only e.g. 'ecosystem actors will work together'.",
+              "0.5": "Stakeholders listed but roles unclear e.g. MCIT, universities, private sector mentioned, but no responsibilities defined.",
+              "0.75": "Stakeholders listed with roles partly described, but incomplete e.g. MCIT leads policy, universities provide research, but private sector role not clarified.",
+              "1.0": "Full external ecosystem model with clear actors and roles e.g. AI Council defines MCIT (policy), universities (research), private sector (adoption), NGOs (ethics), each with assigned functions."
+            }
           }
         },
         {
           "id": "4.3",
           "name": "Coordination & Interaction Mechanisms",
-          "question": "Does the document define coordination mechanisms with clear cadence, format, escalation paths, and accountability?",
+          "question": "Are coordination and interaction mechanisms specified (e.g., councils, steering committees)?",
           "scoring": {
-            "0.0": "No coordination mechanisms described.",
-            "0.25": "Vague mention of coordination without specific mechanisms or cadence.",
-            "0.5": "Some coordination mechanisms exist but lack detail on cadence, format, or accountability.",
-            "0.75": "Good coordination mechanisms with mostly clear cadence and format, minor gaps.",
-            "1.0": "Comprehensive coordination mechanisms with clear cadence, format, escalation paths, and accountability."
+            "entity": {
+              "0.0": "Coordination and interaction mechanisms not required for Entity classification."
+            },
+            "sectoral": {
+              "0.0": "No coordination mechanisms described e.g. Transport strategy has no forums for operators and regulators.",
+              "0.25": "Generic reference only e.g. 'Stakeholders will coordinate regularly'.",
+              "0.5": "Mechanism listed but vague. e.g. 'Transport Council' named without mandate or meeting process.",
+              "0.75": "Mechanism described with some roles but incomplete. e.g. Transport Council covers land transport, but no equivalent for aviation.",
+              "1.0": "Clear, institutionalized coordination mechanisms with defined mandates and membership e.g. National Transport Council meets quarterly, chaired by the ministry, with regulator, municipalities, and operators formally included."
+            },
+            "thematic": {
+              "0.0": "No coordination mechanisms described e.g. Sustainability strategy has no platforms for coordination.",
+              "0.25": "Generic reference only e.g. 'Stakeholders will meet to align efforts'.",
+              "0.5": "Mechanism listed but vague e.g. 'ESG platform' mentioned without mandate or structure.",
+              "0.75": "Mechanism described with some roles but incomplete e.g. AI Council defined for government, but no participation from academia or private sector.",
+              "1.0": "Comprehensive, institutionalized mechanisms for ecosystem coordination e.g. Sustainability Council with ministries, private sector, and academia, formalized with mandate and meeting schedule."
+            }
           }
         }
       ]
@@ -193,13 +385,29 @@
         {
           "id": "5.1",
           "name": "Transformative Initiatives Linked To Objectives",
-          "question": "Are initiatives clearly defined, transformative (not BAU), and explicitly linked to strategic objectives/pillars?",
+          "question": "Are initiatives clearly defined, transformative, and explicitly linked to strategic objectives/pillars?",
           "scoring": {
-            "0.0": "No initiatives identified.",
-            "0.25": "Few initiatives named but vague and not transformative, or not linked to objectives.",
-            "0.5": "Initiatives described but not explicitly tied to objectives or lacking transformative scope.",
-            "0.75": "Initiatives defined and linked to some objectives but with limited transformative scope or impact.",
-            "1.0": "All initiatives clearly defined, transformative, and explicitly linked to objectives and pillars."
+            "entity": {
+              "0.0": "No initiatives described. e.g. RERA strategy lists objectives but no initiatives.",
+              "0.25": "Few initiatives named but vague and not transformative. e.g. 'Improve customer services' without link to objectives or change potential.",
+              "0.5": "Initiatives described but not explicitly tied to objectives or lacking transformative scope. e.g. 'Digitalization of services' mentioned but no link to mandate objectives or reform intent.",
+              "0.75": "Initiatives defined and linked to some objectives but with limited transformative scope or impact. e.g. 3 of 5 objectives mapped to initiatives improving efficiency but not enabling systemic change.",
+              "1.0": "All initiatives clearly defined, transformative, and explicitly linked to objectives and pillars. e.g. 'Establish unified national customer-service platform to reform service delivery.'"
+            },
+            "sectoral": {
+              "0.0": "No initiatives described e.g. Transport strategy sets objectives (safety, sustainability) but no initiatives.",
+              "0.25": "Few initiatives named but vague and not transformative. e.g. 'Improve public transport' listed without further definition.",
+              "0.5": "Initiatives described but not explicitly tied to objectives or lacking transformative scope. e.g. 'Metro expansion' mentioned but not tied to sustainable mobility pillar.",
+              "0.75": "Initiatives defined and linked to some objectives but with limited transformative scope or impact. e.g. Ports initiative linked to trade facilitation, but aviation objective has no initiative.",
+              "1.0": "All initiatives clearly defined, transformative, and explicitly linked to objectives and pillars. e.g. Road safety linked to enforcement, infrastructure, awareness initiatives; sustainability linked to EVs, emissions projects."
+            },
+            "thematic": {
+              "0.0": "No initiatives described e.g. AI strategy has broad goals but no initiatives.",
+              "0.25": "Initiatives generic e.g. 'Support innovation' listed without link.",
+              "0.5": "Initiatives listed but not tied to objectives e.g. 'AI talent program' mentioned but not linked to adoption pillar.",
+              "0.75": "Initiatives linked to some objectives but incomplete e.g. R&D and adoption pillars have initiatives, but governance/ethics does not.",
+              "1.0": "All initiatives defined and linked to objectives e.g. AI strategy defines research, governance, adoption, and talent initiatives, each mapped to a pillar."
+            }
           }
         },
         {
@@ -207,18 +415,34 @@
           "name": "Projects Derived From Initiatives",
           "question": "Are projects clearly defined, derived from initiatives, and do they have a clear scope and deliverables?",
           "scoring": {
-            "0.0": "No projects described.",
-            "0.25": "Projects mentioned vaguely without scope or link to initiatives.",
-            "0.5": "Some projects derived from initiatives, but not all and lacking detail.",
-            "0.75": "Most projects clearly derived and defined with scope/deliverables, but some gaps remain.",
-            "1.0": "All projects explicitly derived from initiatives, with clear scope and deliverables."
+            "entity": {
+              "0.0": "No projects described e.g. RERA lists 'digitization initiative' but no projects under it.",
+              "0.25": "Projects mentioned vaguely without scope or link to initiatives e.g. 'Customer service project' listed but no detail or link to SLA initiative.",
+              "0.5": "Some projects derived from initiatives, but not all and lacking detail e.g. Licensing initiative with e-portal project defined under it, but compliance initiative has no projects.",
+              "0.75": "Most projects clearly derived and defined with scope/deliverables, but some gaps remain e.g. Customer service initiative has multiple projects (training, IT system), but HR initiative has none or project definition is unclear or out of scope.",
+              "1.0": "All projects explicitly derived from initiatives, with clear scope and deliverables e.g. SLA initiative with projects for hotline, digital platform, and training each with scope, deliverables, and link to initiative."
+            },
+            "sectoral": {
+              "0.0": "No projects described e.g. Transport strategy lists 'improve public transport' initiative but no project detail.",
+              "0.25": "Projects mentioned vaguely without scope or link to initiatives e.g. 'Metro project' listed without showing link to sustainable mobility initiative.",
+              "0.5": "Some projects derived from initiatives, but others missing or vague e.g. Ports initiative with container terminal project exists, but aviation initiative has no projects.",
+              "0.75": "Most projects clearly derived and defined with scope/deliverables, but coverage incomplete e.g. Road safety initiative includes engineering and enforcement projects clearly, but education project not detailed.",
+              "1.0": "All projects explicitly derived from initiatives, with clear scope and deliverables e.g. Public transport initiative with projects for metro extension, BRT, and bus modernization, each defined with scope and outputs."
+            },
+            "thematic": {
+              "0.0": "No projects described.",
+              "0.25": "Projects mentioned vaguely without scope or link to initiatives e.g. 'AI training project' named without clear link to talent initiative.",
+              "0.5": "Some projects derived from initiatives, but majority missing or vague e.g. Renewable energy initiative includes solar pilot project, but financing initiative has no projects.",
+              "0.75": "Most projects clearly derived and defined with scope/deliverables, but coverage incomplete e.g. AI adoption initiative includes pilots in healthcare and education defined, but ethics initiative has no projects.",
+              "1.0": "All projects explicitly derived from initiatives, with clear scope and deliverables e.g. Digital governance initiative includes projects for open data, e-signature, and AI regulation, all clearly linked to initiative and defined."
+            }
           }
         }
       ]
     },
     {
       "id": 6,
-      "name": "Project Description, Timeline, & Budgets",
+      "name": "Project Description, Timeline & Budgets",
       "description": "Assesses whether projects have complete descriptions with owners, implementation timelines, and budget allocations.",
       "sub_components": [
         {
@@ -226,66 +450,146 @@
           "name": "Project Description And Owners",
           "question": "Are projects clearly described with defined owners, roles, and responsibilities?",
           "scoring": {
-            "0.0": "No project descriptions provided and no owners identified.",
-            "0.25": "Short or vague descriptions with no clear owner or role.",
-            "0.5": "Some projects described with owners, but roles unclear or overlapping.",
-            "0.75": "Most projects have clear descriptions and owners with defined roles.",
-            "1.0": "All projects are clearly described with defined owners, roles, and alignment with objectives."
+            "entity": {
+              "0.0": "No descriptions provided and no owners identified. e.g. 'Digital platform' mentioned but no project or responsible department listed.",
+              "0.25": "Short or vague descriptions with no clear owner or role. e.g. 'Customer satisfaction project' mentioned without stating who leads it.",
+              "0.5": "Some projects described with owners, but roles unclear or overlapping. e.g. 'HR automation' project listed under both Admin and IT units with no role distinction.",
+              "0.75": "Most projects have clear descriptions and owners with defined roles. e.g. 'E-services project led by IT Department with support from Customer Service Division.'",
+              "1.0": "All projects are clearly described with defined owners, roles, and alignment with entity objectives. e.g. 'Licensing portal project led by Digital Transformation Department with support from Operations and HR.'"
+            },
+            "sectoral": {
+              "0.0": "No descriptions provided and no lead or supporting entities identified.",
+              "0.25": "Short descriptions with unclear ownership or roles. e.g. 'Customer experience initiative' listed without defining regulator, enabler, or service operator.",
+              "0.5": "Some projects have descriptions with entities listed, but coordination unclear. e.g. 'Licensing platform led by Regulator' but no mention of implementation entity.",
+              "0.75": "Most projects clearly described with defined lead and supporting entities. e.g. 'Smart logistics project led by MOT with support from Customs and Ports Authority.'",
+              "1.0": "All projects clearly defined with lead entities, supporting ecosystem roles, and alignment to sectoral objectives. e.g. 'Sustainability program led by Ministry of Energy, executed by QGBC, monitored by Planning Council.'"
+            },
+            "thematic": {
+              "0.0": "No project descriptions provided and no cross-sector leads identified.",
+              "0.25": "Short or vague descriptions with unclear cross-sector ownership. e.g. 'AI adoption initiative' listed without naming lead or supporting sectors.",
+              "0.5": "Some projects described with thematic lead identified but unclear coordination. e.g. 'Digital economy' led by MCIT but unclear role for Education or Energy sectors.",
+              "0.75": "Most projects described with thematic lead identified but unclear coordination. e.g. 'Digital economy' led by MCIT but unclear role for Education or Energy sectors.",
+              "1.0": "All projects clearly defined with cross-sector leads, supporting entities, and coordination mechanisms. e.g. 'National AI strategy led by MCIT, co-led by Health and Education ministries with shared governance structure.'"
+            }
           }
         },
         {
           "id": "6.2",
           "name": "Project Timelines",
-          "question": "Does the document include detailed implementation timelines for all projects with milestones, phases, and dependencies?",
+          "question": "Do projects include detailed timelines with milestones and sequencing?",
           "scoring": {
-            "0.0": "No implementation timelines provided.",
-            "0.25": "Very high-level timeline without milestones or phasing.",
-            "0.5": "Some timelines exist but inconsistent - some projects have milestones, others do not.",
-            "0.75": "Good timelines with milestones and phases for most projects, minor gaps.",
-            "1.0": "Detailed implementation timelines for all projects with milestones, phases, and dependencies."
+            "entity": {
+              "0.0": "No project timelines provided.",
+              "0.25": "Few projects mention timelines but with limited detail or unclear phasing. e.g. 'Complete by 2030' mentioned without milestones.",
+              "0.5": "Some projects include timelines but lack clear sequencing. e.g. 'Awareness campaign' and 'training rollout' listed with same start date.",
+              "0.75": "Most projects have timelines with milestones and logical sequencing. e.g. 'Phase 1: Planning (Q1), Phase 2: Pilot (Q2–Q3), Phase 3: Rollout (Q4).'",
+              "1.0": "All projects have detailed timelines with phases, milestones, and review points. e.g. 'Digital portal launch: design (Q1), testing (Q2), deployment (Q3), evaluation (Q4).'"
+            },
+            "sectoral": {
+              "0.0": "No project timelines provided.",
+              "0.25": "Few projects mention timelines but unaligned across entities. e.g. Regulator's 'Policy Framework' Q1 and Operator's 'Implementation' Q3–Q4 without coordination.",
+              "0.5": "Some timelines provided but lack harmonization. e.g. 'Awareness campaign' overlaps with 'training' rollout.",
+              "0.75": "Most projects include coordinated timelines and sequencing between entities. e.g. 'MOT designs framework (Q1), Customs executes pilot (Q2–Q3).'",
+              "1.0": "All projects include synchronized timelines across entities with aligned milestones and checkpoints. e.g. 'Sector digital roadmap: policy, pilot, full-scale deployment across all agencies.'"
+            },
+            "thematic": {
+              "0.0": "No project timelines provided.",
+              "0.25": "Few projects mention timelines but without cross-sector synchronization. e.g. 'Education digital program 2025' and 'Energy AI project 2026' not aligned.",
+              "0.5": "Some projects have timelines but limited inter-sector coordination. e.g. 'Sustainability pilots run in parallel without unified milestones.'",
+              "0.75": "Most projects have coordinated timelines with shared milestones across sectors. e.g. 'AI testbeds across health, education, and energy aligned on annual review cycle.'",
+              "1.0": "All projects have integrated timelines across sectors with shared milestones, interdependencies, and governance checkpoints. e.g. 'Green transition roadmap (2025–2030) with synchronized milestones across energy, transport, and industry.'"
+            }
           }
         },
         {
           "id": "6.3",
           "name": "Project Budgets",
-          "question": "Does the document provide comprehensive budget allocations per project with funding sources, phasing, and cost breakdowns?",
+          "question": "Are project budgets clearly outlined, itemised, and linked to funding sources?",
           "scoring": {
-            "0.0": "No budget information provided.",
-            "0.25": "High-level total budget mentioned without per-project breakdown.",
-            "0.5": "Some budget allocation per project but inconsistent or missing funding sources.",
-            "0.75": "Good budget allocation for most projects with funding sources, minor gaps.",
-            "1.0": "Comprehensive budget allocation per project with funding sources, phasing, and cost breakdowns."
+            "entity": {
+              "0.0": "No budgets mentioned.",
+              "0.25": "Few projects have rough budgets without breakdown. e.g. 'Estimated cost QAR 10M' with no itemization.",
+              "0.5": "Some projects include budgets but lack breakdown or funding source. e.g. 'Training initiative QAR 1.5M' but source of funds not stated.",
+              "0.75": "Most projects have budget breakdowns with funding sources. e.g. 'Digital system QAR 5M, internal 60%, grant 40%.'",
+              "1.0": "All projects have detailed budgets with cost breakdown, funding source, and implementation schedule. e.g. 'Portal project QAR 7M – allocated 2025 budget, IT CapEx line item, 3-year disbursement.'"
+            },
+            "sectoral": {
+              "0.0": "No project budgets mentioned.",
+              "0.25": "Few projects include indicative budgets without allocation across entities. e.g. 'Sector capacity-building – QAR 10M' with no distribution between agencies.",
+              "0.5": "Some projects have budgets but unclear allocation or funding source. e.g. 'Green logistics initiative, QAR 20M' but no source breakdown.",
+              "0.75": "Most projects include coordinated budgets across entities with partial breakdowns. e.g. 'E-government initiative: Regulator 60%, Service Operator 40%.'",
+              "1.0": "All projects have harmonized budgets with clear breakdown by entity, source, and phase. e.g. 'Mobility program: MOT QAR 5M, Ports Authority QAR 3M, Digital Partner QAR 2M (FY2025–2027).'"
+            },
+            "thematic": {
+              "0.0": "No project budgets mentioned.",
+              "0.25": "Few projects include indicative budgets with no inter-sector breakdown. e.g. 'AI ecosystem QAR 50M' without detail on sector contribution.",
+              "0.5": "Some projects include partial budgets but unclear funding mechanisms or contributors. e.g. 'Sustainability program funded by multiple ministries' but no share specified.",
+              "0.75": "Most projects include consolidated budgets showing contributions from multiple sectors. e.g. 'Green economy initiative: 50% Energy, 30% Industry, 20% Environment.'",
+              "1.0": "All projects have detailed, integrated budgets with allocations, funding sources, and coordinated disbursements across sectors. e.g. 'Digital transformation fund: MCIT QAR 10M, Education QAR 5M, Health QAR 8M (joint funding).'"
+            }
           }
         }
       ]
     },
     {
       "id": 7,
-      "name": "Risks & Mitigation Measures",
+      "name": "Risk & Mitigation",
       "description": "Assesses whether the strategy identifies risks systematically and defines mitigation strategies with clear ownership.",
       "sub_components": [
         {
           "id": "7.1",
           "name": "Risk Identification",
-          "question": "Does the document include a dedicated risk management section with a risk register that systematically identifies, categorizes, and assesses implementation risks (likelihood and impact)?",
+          "question": "Are risks identified (operational, financial, political, reputational)?",
           "scoring": {
-            "0.0": "No dedicated risk section, risk register, or risk matrix present. Note: a 'Challenges' or 'Problems' section describing the sector's current issues is diagnostic content (Criteria 1), NOT risk identification. Implementation risks address what could go wrong DURING strategy execution (e.g., funding gaps, capacity shortfalls, coordination failures, political changes, technology risks).",
-            "0.25": "Brief or generic mention of implementation risks without a structured register, categorization, or assessment.",
-            "0.5": "Some implementation risks identified in a dedicated section but lacking systematic categorization, likelihood ratings, or impact assessment.",
-            "0.75": "Good risk identification with a dedicated section covering multiple implementation risks with categorization and mostly assessed likelihood/impact, minor gaps.",
-            "1.0": "Comprehensive risk register with systematic identification of implementation risks, categorization, likelihood ratings, and impact assessment."
+            "entity": {
+              "0.0": "No risks identified.",
+              "0.25": "Risks only vaguely mentioned e.g. a line like 'implementation challenges may arise' with no detail.",
+              "0.5": "Some risks identified, but not across categories or without detail e.g. mentions financial risk but omits operational, political, or reputational risks.",
+              "0.75": "Most risks identified across categories, but coverage incomplete or analysis shallow e.g. Operational and financial risks described, but reputational risks missing.",
+              "1.0": "Full set of risks identified across operational, financial, political, and reputational dimensions e.g. Risks section outlines delays (operational), budget overruns (financial), regulatory barriers (political), and negative public perception (reputational)."
+            },
+            "sectoral": {
+              "0.0": "No risks identified.",
+              "0.25": "Risks only vaguely mentioned e.g. a line like 'implementation challenges may arise' with no detail.",
+              "0.5": "Some risks identified, but not across categories or without detail e.g. mentions financial risk but omits operational, political, or reputational risks.",
+              "0.75": "Most risks identified across categories, but coverage incomplete or analysis shallow e.g. Operational and financial risks described, but reputational risks missing.",
+              "1.0": "Full set of risks identified across operational, financial, political, and reputational dimensions e.g. Risks section outlines delays (operational), budget overruns (financial), regulatory barriers (political), and negative public perception (reputational)."
+            },
+            "thematic": {
+              "0.0": "No risks identified.",
+              "0.25": "Risks only vaguely mentioned e.g. a line like 'implementation challenges may arise' with no detail.",
+              "0.5": "Some risks identified, but not across categories or without detail e.g. mentions financial risk but omits operational, political, or reputational risks.",
+              "0.75": "Most risks identified across categories, but coverage incomplete or analysis shallow e.g. Operational and financial risks described, but reputational risks missing.",
+              "1.0": "Full set of risks identified across operational, financial, political, and reputational dimensions e.g. Risks section outlines delays (operational), budget overruns (financial), regulatory barriers (political), and negative public perception (reputational)."
+            }
           }
         },
         {
           "id": "7.2",
           "name": "Mitigation Measures",
-          "question": "Does the document define mitigation strategies for identified implementation risks with clear ownership, timelines, and contingency plans?",
+          "question": "Are mitigation measures defined for each risk?",
           "scoring": {
-            "0.0": "No mitigation measures for implementation risks defined. Note: the strategy's own projects and action plans (Criteria 5-6) are the strategy's CORE ACTIVITIES — they are NOT risk mitigation measures. Mitigation measures address risks TO the strategy's execution (e.g., 'If funding is delayed, prioritize Phase 1 projects'). If no implementation risks are identified in 7.1, score 0.0 here.",
-            "0.25": "Generic mitigation mentioned for implementation risks without specific actions or ownership.",
-            "0.5": "Some mitigation strategies defined for implementation risks but not all risks covered or lacking ownership.",
-            "0.75": "Good mitigation strategies for most identified implementation risks with ownership, minor gaps in coverage.",
-            "1.0": "Comprehensive mitigation strategies for all identified implementation risks with clear ownership, timelines, and contingency plans."
+            "entity": {
+              "0.0": "No mitigation measures provided e.g. Risks listed but no response actions.",
+              "0.25": "Mitigation vaguely referenced e.g. 'Risks will be addressed as needed' without specifics.",
+              "0.5": "Some mitigation measures provided, but inconsistent or incomplete e.g. Budget overruns mitigated by monitoring, but no measures for reputational risks.",
+              "0.75": "Most risks have mitigation measures, though some lack depth or clarity e.g. Delays mitigated by hiring more staff, but political risks only vaguely addressed.",
+              "1.0": "Comprehensive mitigation measures defined for all identified risks, with clear actions e.g. Operational risk: project buffer time; financial risk: contingency fund; political risk: stakeholder engagement; reputational risk: communication plan."
+            },
+            "sectoral": {
+              "0.0": "No mitigation measures provided e.g. Risks listed but no response actions.",
+              "0.25": "Mitigation vaguely referenced e.g. 'Risks will be addressed as needed' without specifics.",
+              "0.5": "Some mitigation measures provided, but inconsistent or incomplete e.g. Budget overruns mitigated by monitoring, but no measures for reputational risks.",
+              "0.75": "Most risks have mitigation measures, though some lack depth or clarity e.g. Delays mitigated by hiring more staff, but political risks only vaguely addressed.",
+              "1.0": "Comprehensive mitigation measures defined for all identified risks, with clear actions e.g. Operational risk: project buffer time; financial risk: contingency fund; political risk: stakeholder engagement; reputational risk: communication plan."
+            },
+            "thematic": {
+              "0.0": "No mitigation measures provided e.g. Risks listed but no response actions.",
+              "0.25": "Mitigation vaguely referenced e.g. 'Risks will be addressed as needed' without specifics.",
+              "0.5": "Some mitigation measures provided, but inconsistent or incomplete e.g. Budget overruns mitigated by monitoring, but no measures for reputational risks.",
+              "0.75": "Most risks have mitigation measures, though some lack depth or clarity e.g. Delays mitigated by hiring more staff, but political risks only vaguely addressed.",
+              "1.0": "Comprehensive mitigation measures defined for all identified risks, with clear actions e.g. Operational risk: project buffer time; financial risk: contingency fund; political risk: stakeholder engagement; reputational risk: communication plan."
+            }
           }
         }
       ]

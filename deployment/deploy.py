@@ -67,7 +67,10 @@ def _build_env_vars(project_id: str, location: str) -> Dict[str, str]:
 def create(project_id: str, location: str, staging_bucket: str) -> None:
     import cloudpickle
 
-    # Import ALL modules for pickle-by-value
+    # ── Import ALL base_agent modules (including pdf_extractor) ──────────────
+    # Every module that contains code used at runtime MUST be imported here
+    # AND registered with cloudpickle.register_pickle_by_value().
+    # Missing a module = "No module named base_agent.X" at runtime.
     import base_agent
     import base_agent.agent
     import base_agent.config
@@ -76,29 +79,27 @@ def create(project_id: str, location: str, staging_bucket: str) -> None:
     import base_agent.tools.structural_review_tool
     import base_agent.logic
     import base_agent.logic.checklist_loader
+    import base_agent.logic.pdf_extractor          # ← MUST be explicit, not try/except
     import base_agent.logic.report_generator
     import base_agent.logic.scoring
 
-    # Register for pickle-by-value
+    # ── Register ALL modules for pickle-by-value ──────────────────────────────
+    # Order matters: parent packages before children.
     cloudpickle.register_pickle_by_value(base_agent)
     cloudpickle.register_pickle_by_value(base_agent.agent)
     cloudpickle.register_pickle_by_value(base_agent.config)
     cloudpickle.register_pickle_by_value(base_agent.prompts)
-    cloudpickle.register_pickle_by_value(base_agent.tools)
-    cloudpickle.register_pickle_by_value(base_agent.tools.structural_review_tool)
     cloudpickle.register_pickle_by_value(base_agent.logic)
     cloudpickle.register_pickle_by_value(base_agent.logic.checklist_loader)
+    cloudpickle.register_pickle_by_value(base_agent.logic.pdf_extractor)   # ← explicit
     cloudpickle.register_pickle_by_value(base_agent.logic.report_generator)
     cloudpickle.register_pickle_by_value(base_agent.logic.scoring)
+    cloudpickle.register_pickle_by_value(base_agent.tools)
+    cloudpickle.register_pickle_by_value(base_agent.tools.structural_review_tool)
 
-    # Also try pdf_extractor if it exists
-    try:
-        import base_agent.logic.pdf_extractor
-        cloudpickle.register_pickle_by_value(base_agent.logic.pdf_extractor)
-    except ImportError:
-        pass
+    logger.info("Registered %d modules for pickle-by-value", 11)
 
-    # Embed config JSON files so they survive serialization
+    # ── Embed config JSON files ───────────────────────────────────────────────
     import json
     from base_agent.config import embed_config, get_config_dir
     config_dir = get_config_dir()

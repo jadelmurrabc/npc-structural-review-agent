@@ -27,9 +27,10 @@ from base_agent.logic.report_generator import generate_report
 
 logger = logging.getLogger(__name__)
 
-MAX_WORKERS = 6
-MAX_RETRIES = 5
-RETRY_BASE_DELAY = 8
+MAX_WORKERS = 8
+MAX_RETRIES = 3
+RETRY_BASE_DELAY = 5
+RETRY_MAX_DELAY = 15
 
 _DOCUMENT_CACHE = {}
 _GCS_EXTRACTED_BUCKET = "npc-extracted-docs"
@@ -362,6 +363,48 @@ def _download_text_from_gcs(session_id: str) -> str | None:
         return None
 
 
+# Report persistence — survives agent-framework timeouts
+_REPORT_CACHE: dict = {}
+_GCS_REPORTS_PREFIX = "reports"
+
+
+def _save_report(session_id: str, report: str, criteria_summary: list, overall_score: float) -> None:
+    """Save report to in-memory cache and GCS for retrieval if the main call times out."""
+    _REPORT_CACHE["report"] = report
+    _REPORT_CACHE["criteria_summary"] = criteria_summary
+    _REPORT_CACHE["overall_score"] = overall_score
+    _REPORT_CACHE["session_id"] = session_id
+    try:
+        from google.cloud import storage as gcs_storage
+        payload = json.dumps({
+            "report": report,
+            "criteria_summary": criteria_summary,
+            "overall_score": overall_score,
+        }, ensure_ascii=False)
+        client = gcs_storage.Client()
+        blob = client.bucket(_GCS_EXTRACTED_BUCKET).blob(f"{_GCS_REPORTS_PREFIX}/{session_id}.json")
+        blob.upload_from_string(payload, content_type="application/json; charset=utf-8")
+        print(f"Report saved to GCS ({len(report):,} chars)", flush=True)
+    except Exception as e:
+        logger.error("Report GCS save failed: %s", e)
+
+
+def _load_report(session_id: str) -> dict | None:
+    """Load a saved report from cache or GCS."""
+    if _REPORT_CACHE.get("session_id") == session_id and _REPORT_CACHE.get("report"):
+        return _REPORT_CACHE
+    try:
+        from google.cloud import storage as gcs_storage
+        blob = gcs_storage.Client().bucket(_GCS_EXTRACTED_BUCKET).blob(f"{_GCS_REPORTS_PREFIX}/{session_id}.json")
+        if not blob.exists():
+            return None
+        data = json.loads(blob.download_as_text(encoding="utf-8"))
+        return data
+    except Exception as e:
+        logger.error("Report GCS load failed: %s", e)
+        return None
+
+
 # ═══════════════════════════════════════════════════════════════
 #  Arabic Detection (Gemini reads Arabic natively — no translation)
 # ═══════════════════════════════════════════════════════════════
@@ -497,7 +540,7 @@ def _call_gemini(prompt, system_instruction=""):
         except Exception as e:
             last_exc = e
             if any(kw in str(e).lower() for kw in ["429", "resource_exhausted", "500", "503", "unavailable", "timeout"]):
-                delay = RETRY_BASE_DELAY * (2 ** attempt) + random.uniform(0, RETRY_BASE_DELAY * 0.3)
+                delay = min(RETRY_BASE_DELAY * (2 ** attempt) + random.uniform(0, 2), RETRY_MAX_DELAY)
                 logger.warning("Gemini retry %d/%d in %.1fs: %s", attempt + 1, MAX_RETRIES, delay, str(e)[:200])
                 time.sleep(delay)
             else:
@@ -512,7 +555,42 @@ def _call_gemini(prompt, system_instruction=""):
 SYSTEM_INSTRUCTION = (
     "You are an expert strategy document reviewer for Qatar's National Planning Council. "
     "You evaluate strategy documents against a structural checklist with precise scoring rubrics. "
-    "Be thorough, accurate, and evidence-based. Cite page numbers using [PAGE X] markers. "
+    "Be thorough, accurate, and evidence-based. Cite page numbers using [PAGE X] markers.\n\n"
+    "FORMATTING RULES FOR ALL OUTPUT FIELDS:\n"
+    "- ALL output fields (evidence, reasoning, gap_to_next, recommendation, evidence_summary) "
+    "must be PLAIN TEXT strings. Never wrap them in JSON objects or arrays.\n"
+    "- Never output curly braces {} or square brackets [] inside any text field "
+    "(except for [PAGE X] citations).\n"
+    "- For the 'evidence' field: present each piece of evidence as a separate quoted line. "
+    "Use this exact format for each piece:\n"
+    '  "Quoted text from document" [PAGE X]\n'
+    "- If the document contains a TABLE, reproduce the table content as structured lines, "
+    "with each row on its own line using pipe separators: Column1 | Column2 | Column3. "
+    "Do NOT collapse table rows into a single run-on paragraph.\n"
+    "- For the 'evidence_summary' field: write a concise paragraph summarizing what was found. "
+    "Never use JSON format.\n\n"
+    "TERMINOLOGY ACCURACY:\n"
+    "- When describing where evidence appears in the document, use PRECISE terminology:\n"
+    "  * 'Objective' = a stated strategic objective or goal of the strategy\n"
+    "  * 'Outcome' or 'Key outcome' = a result or deliverable listed under a project\n"
+    "  * 'Initiative' or 'Project' = a named program of work\n"
+    "  * 'Risk' = an identified risk in the risk section\n"
+    "  * 'Mitigation' = an action to address a risk\n"
+    "- NEVER call a project outcome or deliverable a 'goal'. Use 'outcome', 'deliverable', or 'result'.\n"
+    "- NEVER call a risk mitigation action an 'initiative'. Use 'mitigation measure' or 'mitigation action'.\n\n"
+    "TABLE AND STRUCTURED CONTENT HANDLING:\n"
+    "- Pay special attention to tables, especially on the LAST pages of the document. "
+    "Tables near the end often contain roadmaps, risk matrices, KPI summaries, or budget tables.\n"
+    "- When a table row contains multiple columns, read EACH column carefully and attribute "
+    "content to the correct column header. Do not conflate column values.\n"
+    "- In risk tables: distinguish between 'Risk Description' column and 'Mitigation' column.\n"
+    "- In project tables: distinguish between 'Project Name', 'Owner', 'Timeline', and 'Budget' columns.\n"
+    "- EVIDENCE FROM TABLES: When quoting evidence from a table, extract ONLY the meaningful "
+    "cell values. NEVER include column headers (e.g., 'Supporting Agency', 'Program', 'Project', "
+    "'Action', 'Goal', 'Conclusion', 'Output') in the evidence text. Instead, summarize the row "
+    "content as a readable sentence. For example, instead of 'n — Supporting Agency — Program — "
+    "Project — Action — Goal — Ministry of X — Law Enforcement — Speed Control — ...', write: "
+    "'Ministry of X: Law Enforcement — Speed Control — ...' \n\n"
     "Match evidence to the rubric level it genuinely fits. "
     "GROUNDING RULE: ONLY cite text that ACTUALLY appears verbatim in the document. "
     "NEVER fabricate content. If evidence is absent, say so. "
@@ -522,14 +600,57 @@ SYSTEM_INSTRUCTION = (
 SYSTEM_INSTRUCTION_ARABIC = (
     "You are an expert strategy document reviewer for Qatar's National Planning Council. "
     "The document you will evaluate is written in ARABIC. You can read Arabic natively. "
-    "Evaluate the Arabic text directly — do NOT say you cannot read it. "
-    "Extract evidence quotes in their ORIGINAL ARABIC text, then provide your reasoning, "
-    "recommendation, gap_to_next, and evidence_summary ALL IN ENGLISH. "
-    "Cite page numbers using [PAGE X] markers. "
+    "Evaluate the Arabic text directly — do NOT say you cannot read it.\n\n"
+    "CRITICAL LANGUAGE RULES:\n"
+    "- The 'evidence' field: quotes in ORIGINAL ARABIC text exactly as written in the document.\n"
+    "- ALL OTHER FIELDS MUST BE IN ENGLISH. This is mandatory and non-negotiable:\n"
+    "  * 'reasoning' → ENGLISH\n"
+    "  * 'recommendation' → ENGLISH\n"
+    "  * 'gap_to_next' → ENGLISH\n"
+    "  * 'evidence_summary' → ENGLISH\n"
+    "  * 'rubric_walkthrough' → ENGLISH\n"
+    "  * 'selected_score_justification' → ENGLISH\n"
+    "- Even though the source document is Arabic, your analysis MUST be written in English.\n"
+    "- If you find yourself writing Arabic outside the 'evidence' field, STOP and rewrite in English.\n"
+    "- Cite page numbers using [PAGE X] markers.\n\n"
+    "FORMATTING RULES FOR ALL OUTPUT FIELDS:\n"
+    "- ALL output fields must be PLAIN TEXT strings. Never wrap them in JSON objects or arrays.\n"
+    "- Never output curly braces {} or square brackets [] inside any text field "
+    "(except for [PAGE X] citations).\n"
+    "- For the 'evidence' field: present each piece of evidence as a separate quoted line. "
+    "Use this exact format for each piece of Arabic evidence:\n"
+    '  "Arabic quoted text from document" [PAGE X]\n'
+    "  Separate each quote with a blank line.\n"
+    "- If the document contains a TABLE, reproduce the table content as structured lines. "
+    "Use pipe separators for columns: Column1 | Column2 | Column3. "
+    "Each row goes on its own line. Do NOT collapse table rows into a single paragraph.\n"
+    "- For the 'evidence_summary' field: write a concise paragraph IN ENGLISH summarizing "
+    "what was found. Never use JSON format.\n\n"
+    "TERMINOLOGY ACCURACY:\n"
+    "- When describing document content in English fields, use PRECISE terminology:\n"
+    "  * 'Objective' = a stated strategic objective (هدف استراتيجي)\n"
+    "  * 'Outcome' or 'Key outcome' = a result or deliverable (نتيجة / مخرج)\n"
+    "  * 'Initiative' or 'Project' = a named program (مبادرة / مشروع)\n"
+    "  * 'Risk' = an identified risk (مخاطر)\n"
+    "  * 'Mitigation measure' = a risk mitigation action (إجراء التخفيف)\n"
+    "- NEVER call a project outcome a 'goal'. Use 'outcome', 'deliverable', or 'result'.\n"
+    "- NEVER call a risk mitigation an 'initiative'. Use 'mitigation measure'.\n\n"
+    "TABLE AND STRUCTURED CONTENT HANDLING:\n"
+    "- Pay special attention to tables, especially on the LAST pages of the document. "
+    "Arabic documents often place roadmaps, risk matrices, and KPI summaries at the end.\n"
+    "- When reading Arabic tables, respect the right-to-left column order.\n"
+    "- Read EACH column carefully and attribute content to the correct column header.\n"
+    "- In risk tables: distinguish between the 'Risk' column and 'Mitigation' column.\n"
+    "- In project tables: distinguish between 'Project Name', 'Owner', 'Timeline' columns.\n"
+    "- EVIDENCE FROM TABLES: When quoting evidence from a table, extract ONLY the meaningful "
+    "cell values. NEVER include column headers (e.g., 'الجهة الداعمة', 'البرنامج', 'المشروع', "
+    "'الإجراء', 'الهدف', 'الخلاصة', 'المخرج', or their English equivalents 'Supporting Agency', "
+    "'Program', 'Project', 'Action', 'Goal') in the evidence text. Summarize the row content "
+    "as a readable sentence using only the cell values.\n\n"
     "Match evidence to the rubric level it genuinely fits. "
     "GROUNDING RULE: ONLY cite text that ACTUALLY appears verbatim in the document. "
     "NEVER fabricate content. If evidence is absent, say so. "
-    "Respond with valid JSON only. All JSON field values except 'evidence' must be in ENGLISH."
+    "Respond with valid JSON only. ALL JSON field values except 'evidence' MUST be in ENGLISH."
 )
 
 SCOPE_BOUNDARIES = {
@@ -564,27 +685,61 @@ def _build_sub_component_prompt(sub_info, classification, document_text, max_pag
     scope_block = f"\n\nSCOPE BOUNDARY:\n{scope}" if scope else ""
     cond = "\n\nCONDITIONAL: If no relevant content, respond with applicable=false." if sub_info.get("is_conditional") else ""
     warn = "*** WARNING: Agent-provided text may be incomplete. Score CONSERVATIVELY. ***\n\n" if text_source == "agent" else ""
-    arabic_note = (
-        "NOTE: This document is in ARABIC. Read it directly in Arabic. "
-        "Quote evidence in original Arabic. All other fields (reasoning, recommendation, "
-        "gap_to_next, evidence_summary) must be in ENGLISH.\n\n"
-    ) if is_arabic else ""
+
+    arabic_note = ""
+    if is_arabic:
+        arabic_note = (
+            "ARABIC DOCUMENT — LANGUAGE REQUIREMENTS:\n"
+            "This document is in ARABIC. Read it directly in Arabic — do NOT say you cannot read it.\n"
+            "- 'evidence' field: Quote in ORIGINAL ARABIC exactly as it appears in the document.\n"
+            "- ALL OTHER FIELDS MUST BE IN ENGLISH — this is mandatory:\n"
+            "  reasoning, recommendation, gap_to_next, evidence_summary, rubric_walkthrough\n"
+            "- Do NOT write Arabic in any field other than 'evidence'.\n"
+            "- Present each Arabic quote on its own line with [PAGE X] citation.\n"
+            "- When quoting from Arabic tables, use pipe separators for row structure.\n\n"
+        )
 
     return (
         f"Evaluating {sub_id}: {sub_name}\nCriteria: {sub_info['component_name']}\nClassification: {classification}\n\n"
         f"QUESTION:\n{sub_info.get('question', '')}\n\nRUBRIC:\n{rubric_text}{cond}{scope_block}\n\n"
         f"{arabic_note}"
-        "INSTRUCTIONS:\n"
-        "1. Read ENTIRE document. 2. Extract evidence with [PAGE X]. 3. Walk through each rubric level 0.0->1.0.\n"
-        "4. Score = highest level fully supported. 5. Scores vary — don't default.\n"
-        "6. 0.0=Absent, 0.25=Vague, 0.5=Incomplete, 0.75=Minor gaps, 1.0=Complete.\n"
-        "7. Explain match, next level needs, why not met. 8. gap_to_next: all gaps to 1.0.\n"
-        f"9. Pages 1-{max_page}. Never PAGE 0. 10. Every quote must appear verbatim.\n\n"
         f"{warn}"
-        f'Respond ONLY JSON:\n{{"sub_component_id":"{sub_id}","sub_component_name":"{sub_name}",'
-        '"applicable":true,"rubric_walkthrough":{"0.0_assessment":"...","0.25_assessment":"...","0.5_assessment":"...",'
+        "INSTRUCTIONS:\n"
+        "1. Read the ENTIRE document carefully, including tables on the last pages.\n"
+        "2. Extract evidence with [PAGE X] citations.\n"
+        "3. Walk through each rubric level from 0.0 to 1.0 and assess which level the evidence supports.\n"
+        "4. Score = the highest level that is FULLY supported by evidence.\n"
+        "5. Scores should vary across sub-criteria — do NOT default to one score.\n"
+        "6. Score guide: 0.0=Absent, 0.25=Vague/mentioned, 0.5=Partial/incomplete, 0.75=Good with minor gaps, 1.0=Complete.\n"
+        "7. Explain clearly: what was found, what rubric level it matches, what is needed for higher scores.\n"
+        "8. gap_to_next: describe ALL gaps remaining to reach 1.0 (not just the next level).\n"
+        f"9. Valid page range: 1 to {max_page}. Never reference PAGE 0.\n"
+        "10. Every quote in evidence MUST appear verbatim in the document. Never fabricate.\n\n"
+        "EVIDENCE FORMAT RULES:\n"
+        "- Present evidence as a plain text string with quoted passages.\n"
+        "- Each quote on its own line: \"quoted text\" [PAGE X]\n"
+        "- For tables, use pipe-separated format:\n"
+        "  Header1 | Header2 | Header3 [PAGE X]\n"
+        "  Value1 | Value2 | Value3\n"
+        "- NEVER use JSON objects or arrays inside the evidence field.\n"
+        "- NEVER use curly braces {} in any text field.\n\n"
+        "TERMINOLOGY RULES:\n"
+        "- Project outcomes/deliverables → call them 'outcome' or 'deliverable', NEVER 'goal'\n"
+        "- Risk mitigation actions → call them 'mitigation measure', NEVER 'initiative'\n"
+        "- Strategic objectives → call them 'objective' or 'strategic objective'\n"
+        "- Use precise document structure terms: 'section', 'table', 'chapter', 'annex'\n\n"
+        f'Respond ONLY with valid JSON in this exact structure:\n'
+        f'{{"sub_component_id":"{sub_id}","sub_component_name":"{sub_name}",'
+        '"applicable":true,'
+        '"rubric_walkthrough":{"0.0_assessment":"...","0.25_assessment":"...","0.5_assessment":"...",'
         '"0.75_assessment":"...","1.0_assessment":"...","selected_score_justification":"..."},'
-        '"score":0.0,"pages":[1],"evidence":"...","evidence_summary":"...","reasoning":"...","gap_to_next":"...","recommendation":"..."}\n\n'
+        '"score":0.0,'
+        '"pages":[1],'
+        '"evidence":"Quote1 [PAGE X]\\n\\nQuote2 [PAGE Y]",'
+        '"evidence_summary":"Concise English paragraph summarizing findings.",'
+        '"reasoning":"Detailed English explanation of score rationale.",'
+        '"gap_to_next":"English description of all gaps to reach 1.0.",'
+        '"recommendation":"English recommendation for improvement."}\n\n'
         f"DOCUMENT:\n{document_text}"
     )
 
@@ -632,6 +787,70 @@ def _extract_json(text):
     return None
 
 
+def _sanitize_text_field(value: str) -> str:
+    """Clean up a text field by removing residual JSON artifacts, stray braces,
+    and ensuring consistent formatting."""
+    if not value or not isinstance(value, str):
+        return value or ""
+
+    s = value.strip()
+
+    # Remove wrapping quotes if the entire string is double-quoted
+    if len(s) >= 2 and s[0] == '"' and s[-1] == '"':
+        s = s[1:-1].strip()
+
+    # Remove fenced code blocks that leaked through
+    if s.startswith("```"):
+        s = re.sub(r'```\w*\n?', '', s).strip()
+
+    # Remove stray JSON-like wrappers: {"text": "actual content"}
+    if s.startswith('{') and s.endswith('}'):
+        try:
+            obj = json.loads(s)
+            if isinstance(obj, dict):
+                # Extract the best text value
+                for key in ("text", "content", "value", "summary", "assessment",
+                            "reasoning", "recommendation", "evidence", "comment"):
+                    if key in obj and isinstance(obj[key], str):
+                        s = obj[key].strip()
+                        break
+                else:
+                    # Take first string value
+                    for v in obj.values():
+                        if isinstance(v, str) and v.strip():
+                            s = v.strip()
+                            break
+        except json.JSONDecodeError:
+            pass
+
+    # Remove orphaned curly braces that aren't part of [PAGE X] citations
+    # First protect [PAGE X] markers
+    s = re.sub(r'\{([^}]*)\}', lambda m: m.group(1) if '[PAGE' not in m.group(0) else m.group(0), s)
+
+    # Clean up any remaining naked braces not inside PAGE markers
+    # Remove lone { or } that don't form valid structures
+    result = []
+    i = 0
+    while i < len(s):
+        if s[i] == '{' and not (i + 1 < len(s) and s[i + 1:].lstrip().startswith('"')):
+            # Lone opening brace — skip it
+            i += 1
+            continue
+        elif s[i] == '}':
+            # Lone closing brace — skip it
+            i += 1
+            continue
+        else:
+            result.append(s[i])
+            i += 1
+    s = ''.join(result)
+
+    # Normalize multiple blank lines to max 2
+    s = re.sub(r'\n{3,}', '\n\n', s)
+
+    return s.strip()
+
+
 def _parse_sub_response(resp, sub_info, max_page=0):
     """Outer crash-proof wrapper."""
     try:
@@ -658,20 +877,63 @@ def _parse_sub_response_inner(resp, sub_info, max_page=0):
         except (ValueError, TypeError):
             r["score"] = 0.0
 
-    # Normalize ALL text fields to strings (prevents regex crash on lists)
-    for f in ("evidence", "reasoning", "gap_to_next", "recommendation", "evidence_summary"):
+    # Normalize ALL text fields to clean strings
+    text_fields = ("evidence", "reasoning", "gap_to_next", "recommendation", "evidence_summary")
+    for f in text_fields:
         val = r.get(f)
         if val is None:
             r[f] = ""
         elif isinstance(val, list):
-            r[f] = "\n".join(str(e) for e in val)
+            # Convert list to properly formatted text
+            parts = []
+            for item in val:
+                if isinstance(item, dict):
+                    # Handle {"quote": "...", "page": X} format
+                    quote = item.get("quote", "")
+                    page = item.get("page")
+                    text_val = item.get("text", "")
+                    if quote and page is not None:
+                        parts.append(f'"{quote}" [PAGE {page}]')
+                    elif quote:
+                        parts.append(f'"{quote}"')
+                    elif text_val:
+                        parts.append(str(text_val))
+                    else:
+                        # Extract any string value
+                        for v in item.values():
+                            if isinstance(v, str) and v.strip():
+                                parts.append(v.strip())
+                                break
+                elif isinstance(item, str):
+                    parts.append(item.strip())
+                else:
+                    parts.append(str(item))
+            r[f] = "\n\n".join(p for p in parts if p)
+        elif isinstance(val, dict):
+            # Handle dict returned instead of string
+            for key in ("text", "content", "value", "summary", "assessment"):
+                if key in val and isinstance(val[key], str):
+                    r[f] = val[key].strip()
+                    break
+            else:
+                # Fallback: join all string values
+                parts = [str(v).strip() for v in val.values() if v]
+                r[f] = "\n".join(parts)
         elif not isinstance(val, str):
             r[f] = str(val)
 
-    # Safety net for any other unexpected list fields
+    # Apply sanitization to all text fields
+    for f in text_fields:
+        r[f] = _sanitize_text_field(r[f])
+
+    # Safety net for any other unexpected list/dict fields
     for k, v in list(r.items()):
+        if k in text_fields:
+            continue  # Already handled above
         if isinstance(v, list) and k != "pages":
             r[k] = "\n".join(str(e) for e in v)
+        elif isinstance(v, dict) and k not in ("rubric_walkthrough",):
+            r[k] = str(v)
 
     # Normalize pages
     if isinstance(r.get("pages"), list):
@@ -684,7 +946,7 @@ def _parse_sub_response_inner(resp, sub_info, max_page=0):
         r["pages"] = []
 
     # Clamp page references in text fields
-    for f in ("evidence", "reasoning", "gap_to_next", "recommendation", "evidence_summary"):
+    for f in text_fields:
         val = r.get(f, "")
         if not isinstance(val, str):
             val = str(val)
@@ -699,52 +961,120 @@ def _parse_sub_response_inner(resp, sub_info, max_page=0):
         r[f] = val
 
     r.pop("rubric_walkthrough", None)
+
+    # --- Arabic language enforcement ---
+    # If non-evidence fields came back mostly in Arabic, flag as parse failure
+    # so _evaluate_sub retries with reinforced English instructions.
+    english_fields = ("reasoning", "recommendation", "gap_to_next", "evidence_summary")
+    arabic_char_count = 0
+    total_char_count = 0
+    for f in english_fields:
+        val = r.get(f, "")
+        if isinstance(val, str):
+            total_char_count += len(val)
+            arabic_char_count += sum(1 for c in val if '\u0600' <= c <= '\u06ff')
+    if total_char_count > 50 and arabic_char_count / total_char_count > 0.3:
+        logger.warning("Non-evidence fields are >30%% Arabic (%d/%d chars) — flagging for retry",
+                        arabic_char_count, total_char_count)
+        r["_evaluation_error"] = True
+
     return r
+
+
+def _is_fallback_result(result: dict) -> bool:
+    """Check if a result is a fallback (evaluation error) rather than a real evaluation."""
+    return result.get("_evaluation_error", False)
 
 
 def _fallback_sub(si):
     return {"sub_component_id": si["sub_component_id"], "sub_component_name": si["sub_component_name"],
             "applicable": not si.get("is_conditional", False), "score": 0.0, "pages": [],
-            "evidence": "Evaluation error.", "evidence_summary": "Evaluation error",
-            "reasoning": "Manual review required.", "gap_to_next": "", "recommendation": "Manual review required."}
+            "evidence": "", "evidence_summary": "",
+            "reasoning": "Automatic evaluation could not be completed for this sub-component. The model's response could not be parsed into a valid assessment. A manual review is required to properly score this criterion.",
+            "gap_to_next": "", "recommendation": "A manual review of this sub-component is required. The automated evaluation was unable to generate a valid assessment. Please review the source document against the rubric criteria and assign an appropriate score.",
+            "_evaluation_error": True}
 
 
 def _evaluate_sub(si, cls, doc, mp=0, ts="pymupdf", is_arabic=False):
-    """Evaluate one sub-criteria. NEVER raises — returns fallback on any error."""
+    """Evaluate one sub-criteria. NEVER raises — returns fallback on any error.
+    Retries once with simplified prompt if first attempt fails to parse."""
     sid = si["sub_component_id"]
     logger.info("Evaluating %s (arabic=%s)", sid, is_arabic)
-    try:
-        sys_instr = SYSTEM_INSTRUCTION_ARABIC if is_arabic else SYSTEM_INSTRUCTION
-        prompt = _build_sub_component_prompt(si, cls, doc, mp, ts, is_arabic=is_arabic)
-        raw = _call_gemini(prompt, system_instruction=sys_instr)
-        r = _parse_sub_response(raw, si, mp)
-        r["sub_component_id"] = sid
-        r["sub_component_name"] = si["sub_component_name"]
-        logger.info("Done %s: score=%s", sid, r.get("score"))
-        return r
-    except Exception as e:
-        logger.error("Failed %s: %s\n%s", sid, e, traceback.format_exc())
-        fb = _fallback_sub(si)
-        fb["sub_component_id"] = sid
-        fb["sub_component_name"] = si["sub_component_name"]
-        return fb
+
+    for attempt in range(2):
+        try:
+            sys_instr = SYSTEM_INSTRUCTION_ARABIC if is_arabic else SYSTEM_INSTRUCTION
+            prompt = _build_sub_component_prompt(si, cls, doc, mp, ts, is_arabic=is_arabic)
+
+            if attempt == 1:
+                # Retry with extra emphasis on valid JSON output and English
+                logger.info("Retrying %s with reinforced instructions", sid)
+                prompt += (
+                    "\n\nIMPORTANT RETRY NOTE: Your previous response could not be parsed. "
+                    "You MUST respond with ONLY a single valid JSON object. "
+                    "Do not include any text before or after the JSON. "
+                    "Do not use markdown code fences. Just output the raw JSON object. "
+                    "ALL fields except 'evidence' MUST be written in ENGLISH. "
+                    "Do NOT write Arabic in reasoning, recommendation, gap_to_next, or evidence_summary."
+                )
+
+            raw = _call_gemini(prompt, system_instruction=sys_instr)
+            r = _parse_sub_response(raw, si, mp)
+
+            # Check if parse produced a fallback result
+            if _is_fallback_result(r) and attempt == 0:
+                logger.warning("Parse fallback for %s on attempt 1, retrying...", sid)
+                time.sleep(2)
+                continue  # Retry
+
+            r["sub_component_id"] = sid
+            r["sub_component_name"] = si["sub_component_name"]
+            logger.info("Done %s: score=%s (attempt %d)", sid, r.get("score"), attempt + 1)
+            return r
+        except Exception as e:
+            logger.error("Failed %s (attempt %d): %s\n%s", sid, attempt + 1, e, traceback.format_exc())
+            if attempt == 0:
+                time.sleep(2)
+                continue  # Retry on exception too
+
+    # All attempts failed
+    logger.error("All attempts failed for %s, returning fallback", sid)
+    fb = _fallback_sub(si)
+    fb["sub_component_id"] = sid
+    fb["sub_component_name"] = si["sub_component_name"]
+    return fb
 
 
-def _build_comment_prompt(name, subs):
-    lines = []
-    for s in subs:
-        if s.get("applicable", True):
-            pct = int((s.get("score", 0) or 0) * 100)
-            lines.append(f"  {s['sub_component_id']} {s['sub_component_name']}: {pct}%")
-        else:
-            lines.append(f"  {s['sub_component_id']} {s['sub_component_name']}: N/A")
-    scores = [s.get("score", 0) for s in subs if s.get("applicable", True) and s.get("score") is not None]
-    avg = sum(scores) / len(scores) if scores else 0
-    lvl = "complete" if avg >= 1 else "high" if avg >= .75 else "moderate" if avg >= .5 else "low" if avg >= .25 else "absent"
-    return (f"Write 1-2 sentence assessment for: {name}\n\n" + "\n".join(lines) +
-            f"\n\nBand: {lvl.upper()}.\nStart with 'Provides {lvl} coverage'.\n"
-            "Mention key strengths, then key gaps. Keep it concise.\n"
-            "CRITICAL: Output ONLY a plain text sentence. NO JSON, NO code blocks, NO markdown, NO quotes.")
+def _generate_local_comment(comp_name: str, subs: list[dict]) -> str:
+    """Generate a component-level comment from sub-component scores. No LLM needed."""
+    scored = [(s["sub_component_name"], s.get("score", 0) or 0)
+              for s in subs if s.get("applicable", True) and s.get("score") is not None and not s.get("_evaluation_error")]
+    has_errors = any(s.get("_evaluation_error") for s in subs)
+
+    if not scored:
+        return f"Provides absent coverage of {comp_name.lower()}." if not has_errors else (
+            f"Coverage of {comp_name.lower()} could not be determined due to evaluation errors.")
+
+    avg = sum(sc for _, sc in scored) / len(scored)
+    lvl = "complete" if avg >= 0.875 else "high" if avg >= 0.625 else "moderate" if avg >= 0.375 else "low" if avg >= 0.125 else "absent"
+
+    strengths = [name for name, sc in scored if sc >= 0.75]
+    gaps = [name for name, sc in scored if sc < 0.75]
+
+    parts = [f"Provides {lvl} coverage"]
+    if strengths and gaps:
+        parts.append(f", with strong performance in {', '.join(strengths[:2]).lower()}")
+        parts.append(f" but gaps in {', '.join(gaps[:2]).lower()}")
+    elif strengths:
+        parts.append(f" across all assessed sub-components")
+    elif gaps:
+        parts.append(f", with gaps across {', '.join(gaps[:2]).lower()}")
+    parts.append(".")
+
+    if has_errors:
+        parts.append(" Note: one or more sub-components could not be scored and require manual review.")
+
+    return "".join(parts)
 
 
 def _add_na_subs(results, cls, comp_subs):
@@ -899,6 +1229,7 @@ def structural_review(
         subs = get_applicable_sub_components(classification)
         logger.info("Evaluating %d sub-criteria (%d chars, arabic=%s)", len(subs), len(document_text), is_arabic_doc)
         print(f"Starting evaluation: {len(subs)} sub-criteria, {len(document_text):,} chars, arabic={is_arabic_doc}", flush=True)
+        t_eval_start = time.time()
 
         # === Parallel evaluation with is_arabic flag ===
         results = {}
@@ -906,8 +1237,6 @@ def structural_review(
             futs = {}
             for i, si in enumerate(subs):
                 futs[ex.submit(_evaluate_sub, si, classification, document_text, max_page, text_source, is_arabic_doc)] = si
-                if i > 0 and i % MAX_WORKERS == 0:
-                    time.sleep(1)
             for fut in as_completed(futs):
                 si = futs[fut]
                 try:
@@ -916,47 +1245,52 @@ def structural_review(
                     logger.error("Failed %s: %s", si["sub_component_id"], e)
                     results[si["sub_component_id"]] = _fallback_sub(si)
 
-        # === Build component results ===
+        print(f"Sub-criteria evaluated in {time.time() - t_eval_start:.1f}s", flush=True)
+
+        # === Build component results (local comments — no LLM needed) ===
+        t_comp = time.time()
+        checklist_comps = load_checklist(classification)["components"]
         comp_results = []
-        for comp in load_checklist(classification)["components"]:
+        for comp in checklist_comps:
             csubs = [results[s["id"]] for s in comp["sub_components"] if s["id"] in results]
             csubs = _add_na_subs(csubs, classification, comp["sub_components"])
-            try:
-                comment = _call_gemini(_build_comment_prompt(comp["name"], csubs), system_instruction=SYSTEM_INSTRUCTION)
-                comment = (comment or "").strip()
-                if comment.startswith('{') or comment.startswith('['):
-                    try:
-                        parsed = json.loads(comment)
-                        if isinstance(parsed, dict):
-                            comment = str(next(iter(parsed.values()), comment))
-                        elif isinstance(parsed, list):
-                            comment = " ".join(str(x) for x in parsed)
-                    except json.JSONDecodeError:
-                        pass
-                if comment.startswith('```'):
-                    comment = re.sub(r'```\w*\n?', '', comment).strip()
-                if comment.startswith('"') and comment.endswith('"'):
-                    comment = comment[1:-1]
-            except Exception:
-                scores = [s.get("score", 0) for s in csubs if s.get("applicable", True) and s.get("score") is not None]
-                avg = sum(scores) / len(scores) if scores else 0
-                lvl = "high" if avg >= .75 else "moderate" if avg >= .5 else "low" if avg >= .25 else "absent"
-                comment = f"Provides {lvl} coverage."
+            comment = _generate_local_comment(comp["name"], csubs)
             comp_results.append({"id": comp["id"], "name": comp["name"], "comment": comment, "sub_results": csubs})
 
-        report = generate_report(strategy_title=strategy_title, entity_name=entity_name, classification=classification, component_results=comp_results)
-        all_s, na = [], 0
+        print(f"Component comments generated in {time.time() - t_comp:.1f}s", flush=True)
+        try:
+            t_report = time.time()
+            report = generate_report(strategy_title=strategy_title, entity_name=entity_name, classification=classification, component_results=comp_results)
+            print(f"Report generated in {time.time() - t_report:.1f}s ({len(report):,} chars)", flush=True)
+        except Exception as e:
+            logger.exception("generate_report failed")
+            report = f"# Report Generation Error\n\nCriteria were evaluated but report formatting failed: {e}"
+
+        all_s = []
         for c in comp_results:
             for s in c.get("sub_results", []):
-                if s.get("applicable", True) and s.get("score") is not None:
+                if s.get("applicable", True) and s.get("score") is not None and not s.get("_evaluation_error"):
                     all_s.append(s["score"])
 
         criteria_summary = _build_criteria_summary(comp_results, classification)
         print(f"\n=== CRITERIA SUMMARY ===\n{json.dumps(criteria_summary, indent=2)}\n{'=' * 40}", flush=True)
 
+        # Count evaluation errors for reporting
+        eval_errors = sum(1 for c in comp_results for s in c.get("sub_results", []) if s.get("_evaluation_error"))
+        if eval_errors:
+            print(f"WARNING: {eval_errors} sub-component(s) could not be evaluated automatically.", flush=True)
+
+        # Persist report to GCS and cache so it survives agent-framework timeouts
+        overall = calculate_overall_score(all_s)
+        session_id = _get_session_id(tool_context)
+        _save_report(session_id, report, criteria_summary, overall)
+
+        total_elapsed = time.time() - t_eval_start
+        print(f"Total review pipeline: {total_elapsed:.1f}s", flush=True)
+
         return {
             "error": False,
-            "overall_score": calculate_overall_score(all_s),
+            "overall_score": overall,
             "criteria_summary": criteria_summary,
             "report": report,
         }
@@ -967,3 +1301,39 @@ def structural_review(
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg.upper():
             return {"error": True, "message": "Rate limit exceeded. Wait 2-3 minutes."}
         return {"error": True, "message": f"Error: {msg}", "technical_detail": traceback.format_exc()[-500:]}
+
+
+# ═══════════════════════════════════════════════════════════════
+#  TOOL 3: get_review_report — retrieve a completed report
+# ═══════════════════════════════════════════════════════════════
+
+def get_review_report(
+    tool_context: ToolContext = None,
+) -> dict:
+    """Retrieve the most recently completed review report.
+
+    Use this tool if the structural_review call timed out but the evaluation
+    had already completed. The report is persisted to GCS and can be
+    recovered with this tool.
+    """
+    # Try in-memory cache first (fastest)
+    if _REPORT_CACHE.get("report"):
+        return {
+            "error": False,
+            "overall_score": _REPORT_CACHE.get("overall_score", 0),
+            "criteria_summary": _REPORT_CACHE.get("criteria_summary", []),
+            "report": _REPORT_CACHE["report"],
+        }
+
+    # Try GCS by session_id
+    session_id = _get_session_id(tool_context)
+    data = _load_report(session_id)
+    if data and data.get("report"):
+        return {
+            "error": False,
+            "overall_score": data.get("overall_score", 0),
+            "criteria_summary": data.get("criteria_summary", []),
+            "report": data["report"],
+        }
+
+    return {"error": True, "message": "No completed report found. Run structural_review first."}

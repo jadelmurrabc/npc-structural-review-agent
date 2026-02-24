@@ -45,14 +45,11 @@ def get_applicable_sub_components(classification: str) -> list[dict]:
     """Return a flat list of applicable sub-components with their rubrics and questions.
 
     Items in 'applicable' are always scored.
-    Items in 'conditional' are included but marked so the LLM can exclude
-    them if no relevant content is found in the document.
     Items in 'not_applicable' are excluded entirely.
     """
     questions = load_questions()
     applicability = load_applicability(classification)
     applicable_ids = set(applicability["applicable"])
-    conditional = applicability.get("conditional", {})
 
     result = []
     for component in questions["components"]:
@@ -70,17 +67,6 @@ def get_applicable_sub_components(classification: str) -> list[dict]:
                     "rubric": rubric,
                     "is_conditional": False,
                 })
-            elif sub_id in conditional:
-                result.append({
-                    "component_id": component["id"],
-                    "component_name": component["name"],
-                    "sub_component_id": sub_id,
-                    "sub_component_name": sub["name"],
-                    "question": sub.get("question", ""),
-                    "rubric": rubric,
-                    "is_conditional": True,
-                    "conditional_rule": conditional[sub_id],
-                })
     return result
 
 
@@ -89,16 +75,14 @@ def get_components_with_subs(classification: str) -> list[dict]:
     questions = load_questions()
     applicability = load_applicability(classification)
     applicable_ids = set(applicability["applicable"])
-    conditional = applicability.get("conditional", {})
-    all_relevant = applicable_ids | set(conditional.keys())
 
     result = []
     for component in questions["components"]:
         subs = []
         for sub in component["sub_components"]:
-            if sub["id"] in all_relevant:
+            if sub["id"] in applicable_ids:
                 sub_copy = dict(sub)
-                sub_copy["is_conditional"] = sub["id"] in conditional
+                sub_copy["is_conditional"] = False
                 resolved = _resolve_rubric(sub["scoring"], classification)
                 sub_copy["rubric"] = resolved
                 sub_copy["scoring"] = resolved

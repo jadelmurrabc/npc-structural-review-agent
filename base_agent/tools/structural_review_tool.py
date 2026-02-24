@@ -950,15 +950,13 @@ def structural_review(
             for s in c.get("sub_results", []):
                 if s.get("applicable", True) and s.get("score") is not None:
                     all_s.append(s["score"])
-                elif not s.get("applicable", True):
-                    na += 1
 
         criteria_summary = _build_criteria_summary(comp_results, classification)
         print(f"\n=== CRITERIA SUMMARY ===\n{json.dumps(criteria_summary, indent=2)}\n{'=' * 40}", flush=True)
 
         return {
             "error": False,
-            "overall_score": calculate_overall_score(all_s, na_count=na),
+            "overall_score": calculate_overall_score(all_s),
             "criteria_summary": criteria_summary,
             "report": report,
         }

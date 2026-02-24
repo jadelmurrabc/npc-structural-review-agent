@@ -335,17 +335,15 @@ def generate_report(
     lines: list[str] = []
     review_date = datetime.now().strftime("%Y-%m-%d")
 
-    # Collect applicable scores and count N/A items for overall calculation.
+    # Collect applicable scores for overall calculation.
+    # N/A sub-criteria are excluded entirely (not counted in numerator or denominator).
     all_scores: list[float] = []
-    na_count: int = 0
     for comp in component_results:
         for sub in comp.get("sub_results", []):
             if sub.get("applicable", True) and sub.get("score") is not None:
                 all_scores.append(sub["score"])
-            elif not sub.get("applicable", True):
-                na_count += 1
 
-    overall_score = calculate_overall_score(all_scores, na_count=na_count)
+    overall_score = calculate_overall_score(all_scores)
 
     # ─────────────────────────────────────────────
     # HEADER & SCORE OVERVIEW

@@ -27,10 +27,10 @@ from base_agent.logic.report_generator import generate_report
 
 logger = logging.getLogger(__name__)
 
-MAX_WORKERS = 8
-MAX_RETRIES = 3
-RETRY_BASE_DELAY = 5
-RETRY_MAX_DELAY = 15
+MAX_WORKERS = 5          # 5 parallel Gemini calls avoids 429 rate limits (8 caused RESOURCE_EXHAUSTED)
+MAX_RETRIES = 4          # One extra retry for transient 429s
+RETRY_BASE_DELAY = 6     # Give Gemini breathing room between retries
+RETRY_MAX_DELAY = 30     # Handle sustained rate limiting gracefully
 
 _DOCUMENT_CACHE = {}
 _GCS_EXTRACTED_BUCKET = "npc-extracted-docs"
@@ -1232,11 +1232,14 @@ def structural_review(
         t_eval_start = time.time()
 
         # === Parallel evaluation with is_arabic flag ===
+        # Stagger submissions slightly to avoid burst rate-limiting
         results = {}
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
             futs = {}
             for i, si in enumerate(subs):
                 futs[ex.submit(_evaluate_sub, si, classification, document_text, max_page, text_source, is_arabic_doc)] = si
+                if i < len(subs) - 1 and (i + 1) % MAX_WORKERS == 0:
+                    time.sleep(1.0)  # Brief pause between batches
             for fut in as_completed(futs):
                 si = futs[fut]
                 try:

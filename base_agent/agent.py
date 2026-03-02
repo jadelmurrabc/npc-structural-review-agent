@@ -33,7 +33,10 @@ def get_root_agent() -> LlmAgent:
         name="npc_structural_reviewer",
         instruction=return_instructions_root(),
         tools=tools,
-        generate_content_config=types.GenerateContentConfig(temperature=0.01),
+        generate_content_config=types.GenerateContentConfig(
+            temperature=0.01,
+            max_output_tokens=65536,
+        ),
     )
     logger.info("root_agent initialized with 2 tools: extract_document, structural_review")
     return agent

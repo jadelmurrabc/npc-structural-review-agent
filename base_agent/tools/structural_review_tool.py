@@ -33,7 +33,7 @@ RETRY_BASE_DELAY = 6     # Give Gemini breathing room between retries
 RETRY_MAX_DELAY = 30     # Handle sustained rate limiting gracefully
 
 _DOCUMENT_CACHE = {}
-_GCS_EXTRACTED_BUCKET = "npc-extracted-docs"
+_GCS_EXTRACTED_BUCKET = "npc-prd-extracted-docs"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -506,10 +506,62 @@ def _get_max_page(text: str) -> int:
 
 
 def _extract_entity_name(text: str) -> str | None:
-    m = re.search(r'(?:Ministry|Authority|Committee|Council|Bureau|Institute|Department)\s+(?:of|for)\s+[\w\s\-&]+', text[:5000], re.IGNORECASE)
-    if m and len(m.group(0)) > 10:
-        return m.group(0).strip()[:120]
-    return None
+    """Extract entity name, including parent ministry if detectable.
+    Returns format like 'MoI - National Traffic Safety Committee' when
+    a parent ministry is found near the entity name.
+    
+    Excludes false positives like 'Council of Ministers'."""
+    sample = text[:20000]  # Must reach page 9+ where committee names appear
+    
+    # ── PHASE 1: Look for specific named entity patterns ──
+    # Prioritise "National X Committee/Authority" patterns first
+    entity_m = re.search(
+        r'(?:National\s+[\w\s\-]{3,50}?\s+(?:Committee|Authority|Council|Bureau|Institute|Center|Centre))',
+        sample, re.IGNORECASE
+    )
+    
+    # If not found, try "Committee/Authority/etc. of/for X" but EXCLUDE "Council of Ministers"
+    if not entity_m:
+        entity_m = re.search(
+            r'(?:Committee|Authority|Bureau|Institute|Department|Center|Centre)\s+(?:of|for)\s+[\w\s\-&]{3,60}',
+            sample, re.IGNORECASE
+        )
+    
+    # Last resort: "Council of X" but NOT "Council of Ministers"
+    if not entity_m:
+        entity_m = re.search(
+            r'Council\s+(?:of|for)\s+(?!Ministers)[\w\s\-&]{3,60}',
+            sample, re.IGNORECASE
+        )
+    
+    if not entity_m or len(entity_m.group(0).strip()) <= 10:
+        # Fallback: try Ministry pattern alone
+        m = re.search(
+            r'Ministry\s+of\s+[\w\s\-&]{3,60}',
+            sample, re.IGNORECASE
+        )
+        if m and len(m.group(0)) > 10:
+            return m.group(0).strip()[:120]
+        return None
+    
+    entity_name = entity_m.group(0).strip()[:120]
+    
+    # ── PHASE 2: Look for parent ministry nearby ──
+    start = max(0, entity_m.start() - 500)
+    end = min(len(sample), entity_m.end() + 500)
+    window = sample[start:end]
+    ministry_m = re.search(
+        r'Ministry\s+of\s+[\w\s\-&]{3,40}?(?=\s*[-–—,.(]|\s+(?:the|and|is|was|has|under|through|based|No|Decision))',
+        window, re.IGNORECASE
+    )
+    if ministry_m:
+        ministry = ministry_m.group(0).strip()
+        # Don't duplicate if ministry is already part of entity name
+        if ministry.lower() not in entity_name.lower():
+            combined = f"{ministry} - {entity_name}"
+            if len(combined) <= 150:
+                return combined
+    return entity_name
 
 
 def _extract_strategy_title(text: str) -> str | None:
@@ -517,6 +569,46 @@ def _extract_strategy_title(text: str) -> str | None:
     if m and len(m.group(0)) > 10:
         return m.group(0).strip()[:200]
     return None
+
+
+
+def _extract_time_horizon(text: str) -> str:
+    """Extract strategy time horizon (year range) from document text.
+    
+    Works for English and Arabic documents. Handles:
+    - Western numerals: '2025-2030', '2025 – 2030'
+    - Arabic-Indic numerals: '٢٠٢٥-٢٠٣٠'
+    - Textual: '2025 to 2030', 'from 2025 to 2030'
+    - Separated: finds earliest/latest future years in first 20K chars
+    """
+    sample = text[:20000]
+    
+    # Arabic-Indic digits → Western
+    _arabic_map = str.maketrans('٠١٢٣٤٥٦٧٨٩', '0123456789')
+    norm = sample.translate(_arabic_map)
+    
+    # Pattern 1: explicit range with gap >= 2 years
+    # "2025-2030", "2025 – 2030" — skip 1-year gaps like Gantt headers "2025—2026"
+    for m in re.finditer(r'(20[1-4]\d)\s*[-–—]\s*(20[2-5]\d)', norm):
+        gap = int(m.group(2)) - int(m.group(1))
+        if gap >= 2:
+            return f"{m.group(1)} - {m.group(2)}"
+    
+    # Pattern 2: "from 2025 to 2030" / "2025 to 2030", gap >= 2
+    m = re.search(r'(20[1-4]\d)\s+to\s+(20[2-5]\d)', norm, re.IGNORECASE)
+    if m and int(m.group(2)) - int(m.group(1)) >= 2:
+        return f"{m.group(1)} - {m.group(2)}"
+    
+    # Pattern 3: collect all years >= 2024 (skip historical), infer range
+    # Requires gap >= 3 to avoid false positives from Gantt charts
+    years = sorted(set(
+        int(y) for y in re.findall(r'20[2-5]\d', norm)
+        if 2024 <= int(y) <= 2050
+    ))
+    if len(years) >= 2 and years[-1] - years[0] >= 3:
+        return f"{years[0]} - {years[-1]}"
+    
+    return ""
 
 
 def _call_gemini(prompt, system_instruction=""):
@@ -658,7 +750,7 @@ SCOPE_BOUNDARIES = {
     "1.2": "SCOPE: EXPLICIT data-driven comparisons against NAMED peer countries. Generic references = 0.25 max.",
     "1.3": "SCOPE: FORWARD-LOOKING trends (megatrends, tech, demographics). Historical = 1.1. Mentioned=0.25; connected to interventions=0.5.",
     "2.1": "SCOPE: VISION STATEMENT — clarity, ambition, specificity, national alignment. Vague=0.25; stated but unspecific=0.5.",
-    "2.2": "SCOPE: MISSION STATEMENT — Purpose, Scope, Beneficiaries. All three with minor gaps=0.75. One missing=0.5 max.",
+    "2.2": "SCOPE: MISSION STATEMENT — Purpose, Scope, and Role. Clear and mandate-linked=0.75. Narrow or too operational=0.5 max.",
     "2.3": "SCOPE: DEFINED VALUES/principles and operational relevance.",
     "3.1": "SCOPE: STRATEGIC OBJECTIVES/PILLARS (not KPIs). Measurability and vision linkage.",
     "3.2": "SCOPE: KPI DEFINITIONS — methodology, cadence, source, calculation. Just names=0.25; some methodology=0.5.",
@@ -785,6 +877,48 @@ def _extract_json(text):
             if depth == 0:
                 return text[:i + 1]
     return None
+
+
+def _extract_metadata_via_llm(document_text: str) -> dict:
+    """Single Gemini call to extract classification, entity name, strategy title.
+    
+    Works for ANY language (English, Arabic, mixed). Returns dict with keys:
+    classification, entity_name, strategy_title. Returns {} on failure.
+    """
+    sample = document_text[:10000]
+    prompt = (
+        "You are a government document classifier. Analyze this strategy document excerpt.\n\n"
+        "Determine these three things:\n"
+        "1. classification: Is this strategy for...\n"
+        "   - 'entity' = a single ministry or organization (e.g., Ministry of X's internal strategy)\n"
+        "   - 'sectoral' = a cross-cutting national topic involving multiple entities (e.g., National Traffic Safety, National Food Security)\n"
+        "   - 'thematic' = a thematic government-wide initiative (e.g., Innovation, Digital Transformation across all of government)\n"
+        "2. entity_name: The ministry or organization that OWNS/authored this strategy. "
+        "Write the full name in English. If it's a committee under a ministry, write the ministry name.\n"
+        "3. strategy_title: The full title of the strategy in English.\n\n"
+        "KEY RULES:\n"
+        "- A strategy authored BY a single ministry FOR that ministry's domain = 'entity'\n"
+        "- A strategy coordinated by a committee spanning multiple ministries = 'sectoral'\n"
+        "- When the document is in Arabic, translate the entity name and title to English\n"
+        "- For entity_name, give the MINISTRY (e.g., 'Ministry of Interior'), not a committee\n\n"
+        "Respond with ONLY this JSON, nothing else:\n"
+        '{"classification":"entity","entity_name":"...","strategy_title":"..."}\n\n'
+        f"DOCUMENT EXCERPT:\n{sample}"
+    )
+    try:
+        raw = _call_gemini(prompt)
+        j = _extract_json(raw)
+        if j:
+            result = json.loads(j)
+            cls = result.get("classification", "").lower().strip()
+            if cls in ("entity", "sectoral", "thematic"):
+                result["classification"] = cls
+                logger.info("LLM metadata: cls=%s, entity=%s, title=%s",
+                           cls, result.get("entity_name", "?"), result.get("strategy_title", "?"))
+                return result
+    except Exception as e:
+        logger.warning("_extract_metadata_via_llm failed: %s", e)
+    return {}
 
 
 def _sanitize_text_field(value: str) -> str:
@@ -962,9 +1096,9 @@ def _parse_sub_response_inner(resp, sub_info, max_page=0):
 
     r.pop("rubric_walkthrough", None)
 
-    # --- Arabic language enforcement ---
-    # If non-evidence fields came back mostly in Arabic, flag as parse failure
-    # so _evaluate_sub retries with reinforced English instructions.
+    # --- Arabic language detection in non-evidence fields ---
+    # Flag for retry, but NOT a permanent error. A result with Arabic reasoning
+    # is far better than no result at all.
     english_fields = ("reasoning", "recommendation", "gap_to_next", "evidence_summary")
     arabic_char_count = 0
     total_char_count = 0
@@ -976,7 +1110,7 @@ def _parse_sub_response_inner(resp, sub_info, max_page=0):
     if total_char_count > 50 and arabic_char_count / total_char_count > 0.3:
         logger.warning("Non-evidence fields are >30%% Arabic (%d/%d chars) — flagging for retry",
                         arabic_char_count, total_char_count)
-        r["_evaluation_error"] = True
+        r["_arabic_fields"] = True  # Soft flag — retry desired, not fatal
 
     return r
 
@@ -996,19 +1130,20 @@ def _fallback_sub(si):
 
 
 def _evaluate_sub(si, cls, doc, mp=0, ts="pymupdf", is_arabic=False):
-    """Evaluate one sub-criteria. NEVER raises — returns fallback on any error.
-    Retries once with simplified prompt if first attempt fails to parse."""
+    """Evaluate one sub-criteria. NEVER raises — returns a scored result on any error.
+    Uses 4 progressive retry attempts. NEVER returns _evaluation_error."""
     sid = si["sub_component_id"]
     logger.info("Evaluating %s (arabic=%s)", sid, is_arabic)
-
-    for attempt in range(2):
+    
+    best_result = None  # Track best result across attempts
+    
+    for attempt in range(4):
         try:
             sys_instr = SYSTEM_INSTRUCTION_ARABIC if is_arabic else SYSTEM_INSTRUCTION
             prompt = _build_sub_component_prompt(si, cls, doc, mp, ts, is_arabic=is_arabic)
 
             if attempt == 1:
-                # Retry with extra emphasis on valid JSON output and English
-                logger.info("Retrying %s with reinforced instructions", sid)
+                # Retry with extra emphasis on valid JSON + English
                 prompt += (
                     "\n\nIMPORTANT RETRY NOTE: Your previous response could not be parsed. "
                     "You MUST respond with ONLY a single valid JSON object. "
@@ -1017,32 +1152,90 @@ def _evaluate_sub(si, cls, doc, mp=0, ts="pymupdf", is_arabic=False):
                     "ALL fields except 'evidence' MUST be written in ENGLISH. "
                     "Do NOT write Arabic in reasoning, recommendation, gap_to_next, or evidence_summary."
                 )
+            elif attempt == 2:
+                # Simplified: shorter document context to reduce confusion
+                doc_sample = doc[:min(len(doc), 80000)]  # Trim document if huge
+                prompt = _build_sub_component_prompt(si, cls, doc_sample, mp, ts, is_arabic=is_arabic)
+                prompt += (
+                    "\n\nCRITICAL: Respond with ONLY valid JSON. "
+                    "All analysis fields MUST be in English. "
+                    "Only the 'evidence' field may contain Arabic quotes."
+                )
+            elif attempt == 3:
+                # Ultra-minimal: just get a score — almost impossible to fail
+                sub_name = si["sub_component_name"]
+                rubric_text = "\n".join(f"  {k}: {v}" for k, v in si["rubric"].items())
+                doc_sample = doc[:min(len(doc), 50000)]
+                prompt = (
+                    f"Score this criterion: {sid} — {sub_name}\n\n"
+                    f"RUBRIC:\n{rubric_text}\n\n"
+                    f"Score guide: 0.0=Absent, 0.25=Vague, 0.5=Partial, 0.75=Good, 1.0=Complete\n\n"
+                    f"Respond with ONLY this JSON:\n"
+                    f'{{"sub_component_id":"{sid}","applicable":true,"score":0.0,'
+                    f'"pages":[],"evidence":"","evidence_summary":"Brief finding.",'
+                    f'"reasoning":"Why this score.","gap_to_next":"What is missing for 1.0.",'
+                    f'"recommendation":"How to improve."}}\n\n'
+                    f"DOCUMENT:\n{doc_sample}"
+                )
+                sys_instr = ""  # Remove complex system instructions
 
             raw = _call_gemini(prompt, system_instruction=sys_instr)
             r = _parse_sub_response(raw, si, mp)
 
-            # Check if parse produced a fallback result
-            if _is_fallback_result(r) and attempt == 0:
-                logger.warning("Parse fallback for %s on attempt 1, retrying...", sid)
-                time.sleep(2)
-                continue  # Retry
+            # Check if we got a usable result (has a real score, not a fallback)
+            if not r.get("_evaluation_error"):
+                # Clean result — check if Arabic retry desired
+                if r.get("_arabic_fields") and attempt < 3:
+                    # Arabic content in non-evidence fields — worth retrying
+                    logger.info("Arabic fields in %s (attempt %d), retrying for English", sid, attempt + 1)
+                    if best_result is None:
+                        best_result = r  # Save as fallback
+                    time.sleep(2)
+                    continue
+                # Good result (or final attempt — accept Arabic content)
+                r.pop("_arabic_fields", None)
+                r["sub_component_id"] = sid
+                r["sub_component_name"] = si["sub_component_name"]
+                logger.info("Done %s: score=%s (attempt %d)", sid, r.get("score"), attempt + 1)
+                return r
+            else:
+                # Parse failure — retry
+                logger.warning("Parse failure for %s (attempt %d), retrying...", sid, attempt + 1)
+                if attempt < 3:
+                    time.sleep(2)
+                    continue
 
-            r["sub_component_id"] = sid
-            r["sub_component_name"] = si["sub_component_name"]
-            logger.info("Done %s: score=%s (attempt %d)", sid, r.get("score"), attempt + 1)
-            return r
         except Exception as e:
-            logger.error("Failed %s (attempt %d): %s\n%s", sid, attempt + 1, e, traceback.format_exc())
-            if attempt == 0:
+            logger.error("Exception %s (attempt %d): %s", sid, attempt + 1, e)
+            if attempt < 3:
                 time.sleep(2)
-                continue  # Retry on exception too
+                continue
 
-    # All attempts failed
-    logger.error("All attempts failed for %s, returning fallback", sid)
-    fb = _fallback_sub(si)
-    fb["sub_component_id"] = sid
-    fb["sub_component_name"] = si["sub_component_name"]
-    return fb
+    # All 4 attempts exhausted — use best available result
+    if best_result and best_result.get("score") is not None:
+        # We had a parsed result with Arabic fields — use it
+        best_result.pop("_evaluation_error", None)
+        best_result.pop("_arabic_fields", None)
+        best_result["sub_component_id"] = sid
+        best_result["sub_component_name"] = si["sub_component_name"]
+        logger.warning("Using best-effort result for %s (had Arabic fields)", sid)
+        return best_result
+
+    # Absolute last resort: score 0.0 conservatively — NOT an evaluation error
+    logger.error("All 4 attempts failed for %s — assigning conservative 0.0", sid)
+    return {
+        "sub_component_id": sid,
+        "sub_component_name": si["sub_component_name"],
+        "applicable": True,
+        "score": 0.0,
+        "pages": [],
+        "evidence": "",
+        "evidence_summary": "Automated evaluation was unable to produce a detailed assessment after multiple attempts.",
+        "reasoning": "The automated evaluation system could not parse a valid assessment after four attempts. A conservative score of 0% has been assigned. Manual review is recommended to verify the correct score for this sub-component.",
+        "gap_to_next": "A full evaluation against the rubric criteria is needed to determine the correct score and identify specific gaps.",
+        "recommendation": "Manual review of this sub-component against the rubric is recommended to assign the correct score.",
+        "_evaluation_error": False,  # Explicitly NOT an error — it's a conservative score
+    }
 
 
 def _generate_local_comment(comp_name: str, subs: list[dict]) -> str:
@@ -1206,11 +1399,37 @@ def structural_review(
             logger.info("Arabic document detected (%d chars) — will use Arabic-aware prompts", len(document_text))
             print("Arabic document detected — using native Arabic evaluation (no translation needed)", flush=True)
 
-        # Extract metadata
-        if entity_name in ("Unknown Entity", "", None):
-            entity_name = _extract_entity_name(document_text) or "Unknown Entity"
-        if strategy_title in ("Untitled Strategy", "", None):
+        # Extract metadata — LLM for entity/title (works any language), classification ALWAYS from user
+        agent_entity = entity_name
+        agent_title = strategy_title
+        
+        llm_meta = _extract_metadata_via_llm(document_text)
+        
+        # Classification: ALWAYS trust the user/agent — never override
+        # (classification is a policy decision, not something to auto-detect)
+        
+        # Entity: LLM > regex > agent
+        if llm_meta.get("entity_name") and len(llm_meta["entity_name"].strip()) > 3:
+            entity_name = llm_meta["entity_name"].strip()
+            logger.info("Entity from LLM: %s (agent said: %s)", entity_name, agent_entity)
+        else:
+            regex_entity = _extract_entity_name(document_text)
+            if regex_entity:
+                entity_name = regex_entity
+                logger.info("Entity from regex: %s (agent said: %s)", entity_name, agent_entity)
+            elif agent_entity not in ("Unknown Entity", "", None):
+                entity_name = agent_entity
+                logger.info("Entity from agent (LLM+regex found nothing): %s", entity_name)
+            else:
+                entity_name = "Unknown Entity"
+        
+        # Strategy title: LLM > regex > agent
+        if llm_meta.get("strategy_title") and len(llm_meta["strategy_title"].strip()) > 5:
+            strategy_title = llm_meta["strategy_title"].strip()
+        elif strategy_title in ("Untitled Strategy", "", None):
             strategy_title = _extract_strategy_title(document_text) or "Untitled Strategy"
+        
+        time_horizon = _extract_time_horizon(document_text)
 
         # Inject page markers if missing
         max_page = _get_max_page(document_text)
@@ -1246,7 +1465,11 @@ def structural_review(
                     results[si["sub_component_id"]] = fut.result()
                 except Exception as e:
                     logger.error("Failed %s: %s", si["sub_component_id"], e)
-                    results[si["sub_component_id"]] = _fallback_sub(si)
+                    # Conservative fallback — scored 0.0, NOT an evaluation error
+                    fb = _fallback_sub(si)
+                    fb["_evaluation_error"] = False
+                    fb["reasoning"] = "The evaluation system encountered an unexpected error. A conservative score of 0% has been assigned. Manual review is recommended."
+                    results[si["sub_component_id"]] = fb
 
         print(f"Sub-criteria evaluated in {time.time() - t_eval_start:.1f}s", flush=True)
 
@@ -1263,7 +1486,7 @@ def structural_review(
         print(f"Component comments generated in {time.time() - t_comp:.1f}s", flush=True)
         try:
             t_report = time.time()
-            report = generate_report(strategy_title=strategy_title, entity_name=entity_name, classification=classification, component_results=comp_results)
+            report = generate_report(strategy_title=strategy_title, entity_name=entity_name, classification=classification, component_results=comp_results, time_horizon=time_horizon)
             print(f"Report generated in {time.time() - t_report:.1f}s ({len(report):,} chars)", flush=True)
         except Exception as e:
             logger.exception("generate_report failed")

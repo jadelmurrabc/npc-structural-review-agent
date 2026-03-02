@@ -137,6 +137,9 @@ def create(project_id: str, location: str, staging_bucket: str) -> None:
         display_name=display_name,
         requirements=requirements,
         env_vars=env_vars,
+        min_instances=1,
+        max_instances=4,
+        resource_limits={"cpu": "4", "memory": "8Gi"},
     )
 
     logger.info("Created: %s", remote_agent.resource_name)

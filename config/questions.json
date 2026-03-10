@@ -182,33 +182,33 @@
     {
       "id": 3,
       "name": "Strategic Outcomes & KPIs",
-      "description": "Assesses whether the strategy defines clear, measurable objectives supported by well-defined KPIs with baselines, targets, and SMART criteria.",
+      "description": "Assesses whether the strategy defines clear, measurable outcomes supported by well-defined KPIs with baselines, targets, and SMART criteria.",
       "sub_components": [
         {
           "id": "3.1",
-          "name": "Strategic Objectives / Pillars",
-          "question": "Are there well-defined strategic objectives or pillars that cover the strategy's scope?",
+          "name": "Strategic Outcomes / Pillars",
+          "question": "Are there well-defined strategic outcomes or pillars that cover the strategy's scope?",
           "scoring": {
             "entity": {
-              "0.0": "No strategic objectives or pillars included.",
-              "0.25": "Very generic objectives not tied to mandate e.g., 'to improve services'.",
-              "0.5": "Some objectives included but incomplete and not structured under clear pillars; institutional excellence (e.g., SLAs, digitization) missing.",
-              "0.75": "Objectives clear and mandate-linked, and partly structured under pillars, but coverage narrow or unbalanced (e.g., only efficiency and licensing mentioned).",
-              "1.0": "Comprehensive, mandate-specific pillars clearly defined, with strategic objectives stemming from them, covering all institutional excellence dimensions."
+              "0.0": "No strategic outcomes or pillars included.",
+              "0.25": "Very generic outcomes not tied to mandate e.g., 'to improve services'.",
+              "0.5": "Some outcomes included but incomplete and not structured under clear pillars; institutional excellence (e.g., SLAs, digitization) missing.",
+              "0.75": "Outcomes clear and mandate-linked, and partly structured under pillars, but coverage narrow or unbalanced (e.g., only efficiency and licensing mentioned).",
+              "1.0": "Comprehensive, mandate-specific pillars clearly defined, with strategic outcomes stemming from them, covering all institutional excellence dimensions."
             },
             "sectoral": {
-              "0.0": "No strategic objectives or pillars included.",
+              "0.0": "No strategic outcomes or pillars included.",
               "0.25": "Broad, unstructured phrases without sectoral scope e.g. 'to develop the sector'.",
-              "0.5": "Some objectives included but not structured under sector-wide pillars; coverage limited to one aspect (e.g., demand only).",
-              "0.75": "Pillars included with objectives stemming from them, sector-specific but missing ecosystem balance (e.g., innovation or regulation left out).",
-              "1.0": "Comprehensive sector-wide pillars with clear objectives flowing from them, covering e.g. private sector engagement, regulation, innovation, sustainability, and institutional excellence."
+              "0.5": "Some outcomes included but not structured under sector-wide pillars; coverage limited to one aspect (e.g., demand only).",
+              "0.75": "Pillars included with outcomes stemming from them, sector-specific but missing ecosystem balance (e.g., innovation or regulation left out).",
+              "1.0": "Comprehensive sector-wide pillars with clear outcomes flowing from them, covering e.g. private sector engagement, regulation, innovation, sustainability, and institutional excellence."
             },
             "thematic": {
-              "0.0": "No strategic objectives or pillars included.",
-              "0.25": "Very generic objectives not tied to the theme e.g. 'to promote innovation'.",
-              "0.5": "Some theme-related objectives included but not structured under thematic pillars; narrow scope (e.g., adoption only).",
-              "0.75": "Clear thematic pillars with objectives stemming from them, but missing important enablers (e.g., human capital, private sector).",
-              "1.0": "Comprehensive thematic pillars with objectives cascading from them, covering e.g. adoption, policy/regulation, human capital, ecosystem, and private sector participation."
+              "0.0": "No strategic outcomes or pillars included.",
+              "0.25": "Very generic outcomes not tied to the theme e.g. 'to promote innovation'.",
+              "0.5": "Some theme-related outcomes included but not structured under thematic pillars; narrow scope (e.g., adoption only).",
+              "0.75": "Clear thematic pillars with outcomes stemming from them, but missing important enablers (e.g., human capital, private sector).",
+              "1.0": "Comprehensive thematic pillars with outcomes cascading from them, covering e.g. adoption, policy/regulation, human capital, ecosystem, and private sector participation."
             }
           }
         },
@@ -278,21 +278,21 @@
               "0.25": "KPIs listed but vague e.g. 'improve services'.",
               "0.5": "Some KPIs measurable, but others too broad or lacking calculation methodology.",
               "0.75": "Most KPIs are SMART but with minor issues (e.g., relevant but not time-bound, or measurable but no calculation method).",
-              "1.0": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence."
+              "1.0": "All KPIs fully SMART with calculation methodology, data source, cadence, and relevance to institutional excellence. Note: baseline/target presence is scored under 3.3, not here."
             },
             "sectoral": {
               "0.0": "No measurable KPIs.",
               "0.25": "KPIs vague e.g. 'increase sector efficiency'.",
               "0.5": "Some sector KPIs are SMART, but many lack specificity or calculation method.",
-              "0.75": "Most KPIs fully SMART, with baselines, targets, calculation methodology.",
-              "1.0": "All sector KPIs fully SMART, with baselines, targets, calculation methodology, and linked to sectoral objectives."
+              "0.75": "Most KPIs fully SMART with calculation methodology and linked to sectoral objectives.",
+              "1.0": "All sector KPIs fully SMART with calculation methodology, data source, cadence, and linked to sectoral objectives. Note: baseline/target presence is scored under 3.3, not here."
             },
             "thematic": {
               "0.0": "No measurable KPIs.",
               "0.25": "Very generic KPIs e.g. 'promote innovation'.",
               "0.5": "Some thematic KPIs measurable, but many lack specificity, methodology, or alignment.",
-              "0.75": "All KPIs fully SMART, with baselines, targets, calculation methodology, and relevance to institutional excellence.",
-              "1.0": "All thematic KPIs fully SMART, with baselines, targets, calculation methodology."
+              "0.75": "Most KPIs fully SMART with calculation methodology and relevance to thematic objectives.",
+              "1.0": "All thematic KPIs fully SMART with calculation methodology, data source, cadence, and linked to thematic objectives. Note: baseline/target presence is scored under 3.3, not here."
             }
           }
         }

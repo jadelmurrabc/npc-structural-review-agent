@@ -661,10 +661,10 @@ SYSTEM_INSTRUCTION = (
     "Do NOT collapse table rows into a single run-on paragraph.\n"
     "- For the 'evidence_summary' field: write a concise paragraph summarizing what was found. "
     "Never use JSON format.\n\n"
-    "TERMINOLOGY ACCURACY:\n"
+    "TERMINOLOGY ACCURACY (NDS3 ALIGNED):\n"
     "- When describing where evidence appears in the document, use PRECISE terminology:\n"
-    "  * 'Objective' = a stated strategic objective or goal of the strategy\n"
-    "  * 'Outcome' or 'Key outcome' = a result or deliverable listed under a project\n"
+    "  * 'Outcome' or 'Strategic outcome' = a stated strategic outcome of the strategy\n"
+    "  * 'Deliverable' or 'Output' = a result or deliverable listed under a project\n"
     "  * 'Initiative' or 'Project' = a named program of work\n"
     "  * 'Risk' = an identified risk in the risk section\n"
     "  * 'Mitigation' = an action to address a risk\n"
@@ -684,8 +684,11 @@ SYSTEM_INSTRUCTION = (
     "Project — Action — Goal — Ministry of X — Law Enforcement — Speed Control — ...', write: "
     "'Ministry of X: Law Enforcement — Speed Control — ...' \n\n"
     "Match evidence to the rubric level it genuinely fits. "
-    "GROUNDING RULE: ONLY cite text that ACTUALLY appears verbatim in the document. "
-    "NEVER fabricate content. If evidence is absent, say so. "
+    "GROUNDING RULE: Evidence must faithfully represent content that ACTUALLY exists in the document. "
+    "For Arabic documents, the 'evidence' field must contain ARABIC text only — never English narration or commentary. "
+    "If the PDF extraction garbled the Arabic, reconstruct it as clean readable Arabic matching exactly what the document says "
+    "(same words, same structure — not paraphrased). English analysis belongs in 'evidence_summary' and 'reasoning' only. "
+    "NEVER fabricate content that does not exist in the document. If evidence is absent, say so. "
     "Respond with valid JSON only."
 )
 
@@ -694,7 +697,14 @@ SYSTEM_INSTRUCTION_ARABIC = (
     "The document you will evaluate is written in ARABIC. You can read Arabic natively. "
     "Evaluate the Arabic text directly — do NOT say you cannot read it.\n\n"
     "CRITICAL LANGUAGE RULES:\n"
-    "- The 'evidence' field: quotes in ORIGINAL ARABIC text exactly as written in the document.\n"
+    "- The 'evidence' field MUST ALWAYS contain ARABIC text — NEVER English.\n"
+    "  The evidence field must contain the actual Arabic words from the document, not English descriptions about what the document says.\n"
+    "  WRONG: 'The document defines five strategic directions...' (this is English commentary)\n"
+    "  RIGHT: 'التوجهات الاستراتيجية: عمالة جاذبة للقطاع الخاص — قطاع خاص جاذب للعمالة الماهرة...' (this is the actual Arabic content)\n"
+    "  If the PDF extraction produced garbled Arabic (broken ligatures, fused characters), reconstruct it as\n"
+    "  clean, readable Arabic that matches EXACTLY what the original document intended to say — same words,\n"
+    "  same structure, same meaning. Do NOT paraphrase, summarize, or rephrase in different Arabic words.\n"
+    "  Your job is to fix the encoding artifacts, not to rewrite the content.\n"
     "- ALL OTHER FIELDS MUST BE IN ENGLISH. This is mandatory and non-negotiable:\n"
     "  * 'reasoning' → ENGLISH\n"
     "  * 'recommendation' → ENGLISH\n"
@@ -711,17 +721,18 @@ SYSTEM_INSTRUCTION_ARABIC = (
     "(except for [PAGE X] citations).\n"
     "- For the 'evidence' field: present each piece of evidence as a separate quoted line. "
     "Use this exact format for each piece of Arabic evidence:\n"
-    '  "Arabic quoted text from document" [PAGE X]\n'
+    '  "النص العربي من الوثيقة" [PAGE X]\n'
+    "  The text between quotes must be ARABIC from the document, never English.\n"
     "  Separate each quote with a blank line.\n"
     "- If the document contains a TABLE, reproduce the table content as structured lines. "
     "Use pipe separators for columns: Column1 | Column2 | Column3. "
     "Each row goes on its own line. Do NOT collapse table rows into a single paragraph.\n"
     "- For the 'evidence_summary' field: write a concise paragraph IN ENGLISH summarizing "
     "what was found. Never use JSON format.\n\n"
-    "TERMINOLOGY ACCURACY:\n"
+    "TERMINOLOGY ACCURACY (NDS3 ALIGNED):\n"
     "- When describing document content in English fields, use PRECISE terminology:\n"
-    "  * 'Objective' = a stated strategic objective (هدف استراتيجي)\n"
-    "  * 'Outcome' or 'Key outcome' = a result or deliverable (نتيجة / مخرج)\n"
+    "  * 'Outcome' or 'Strategic outcome' = a stated strategic outcome (هدف استراتيجي / نتيجة وطنية)\n"
+    "  * 'Deliverable' or 'Output' = a project result or deliverable (نتيجة / مخرج)\n"
     "  * 'Initiative' or 'Project' = a named program (مبادرة / مشروع)\n"
     "  * 'Risk' = an identified risk (مخاطر)\n"
     "  * 'Mitigation measure' = a risk mitigation action (إجراء التخفيف)\n"
@@ -740,8 +751,11 @@ SYSTEM_INSTRUCTION_ARABIC = (
     "'Program', 'Project', 'Action', 'Goal') in the evidence text. Summarize the row content "
     "as a readable sentence using only the cell values.\n\n"
     "Match evidence to the rubric level it genuinely fits. "
-    "GROUNDING RULE: ONLY cite text that ACTUALLY appears verbatim in the document. "
-    "NEVER fabricate content. If evidence is absent, say so. "
+    "GROUNDING RULE: The 'evidence' field must contain ARABIC text from the document — NEVER English narration or commentary. "
+    "If the PDF extraction garbled the Arabic, reconstruct it as clean readable Arabic matching exactly what the document says — "
+    "same words, same structure. Do NOT paraphrase or use different Arabic words. Just fix the encoding artifacts. "
+    "NEVER fabricate content that does not exist in the document. If evidence is absent, say so. "
+    "English descriptions of the document belong in 'evidence_summary' and 'reasoning', NOT in 'evidence'. "
     "Respond with valid JSON only. ALL JSON field values except 'evidence' MUST be in ENGLISH."
 )
 
@@ -752,16 +766,16 @@ SCOPE_BOUNDARIES = {
     "2.1": "SCOPE: VISION STATEMENT — clarity, ambition, specificity, national alignment. Vague=0.25; stated but unspecific=0.5.",
     "2.2": "SCOPE: MISSION STATEMENT — Purpose, Scope, and Role. Clear and mandate-linked=0.75. Narrow or too operational=0.5 max.",
     "2.3": "SCOPE: DEFINED VALUES/principles and operational relevance.",
-    "3.1": "SCOPE: STRATEGIC OBJECTIVES/PILLARS (not KPIs). Measurability and vision linkage.",
+    "3.1": "SCOPE: STRATEGIC OUTCOMES/PILLARS (not KPIs). Measurability and vision linkage. Use 'outcomes' terminology per NDS3 methodology.",
     "3.2": "SCOPE: KPI DEFINITIONS — methodology, cadence, source, calculation. Just names=0.25; some methodology=0.5.",
     "3.3": "SCOPE: QUANTIFIED BASELINES and TIME-BOUND TARGETS. Partial=0.5.",
-    "3.4": "SCOPE: SMART KPIs. Names without methodology NOT SMART. Deliverables are NOT KPIs.",
+    "3.4": "SCOPE: SMART KPIs — focus on Specific, Measurable, Achievable, Relevant, Time-bound qualities and calculation methodology. Do NOT penalize for missing baselines or targets here — that is scored exclusively under 3.3. Names without methodology NOT SMART. Deliverables are NOT KPIs.",
     "4.1": "SCOPE: INTERNAL governance — committees, roles, reporting within implementing bodies.",
     "4.2": "SCOPE: EXTERNAL stakeholders. Named roles per action = mapping (0.75+). Needs engagement mechanisms for 1.0.",
     "4.3": "SCOPE: COORDINATION MECHANISMS — cadence, reporting, escalation, accountability.",
     "5.1": "SCOPE: TRANSFORMATIVE initiatives linked to objectives. Routine ops don't qualify.",
-    "5.2": "SCOPE: Hierarchy: initiatives → projects with traceable linkage.",
-    "6.1": "SCOPE: DESIGNATED OWNERS per project. Clear single owner=1.0; ambiguous=0.75 max.",
+    "5.2": "SCOPE: Hierarchy: initiatives → projects with traceable linkage, scope definition, and deliverables. Do NOT penalize for missing owners/roles here — that is scored exclusively under 6.1.",
+    "6.1": "SCOPE: DESIGNATED OWNERS and ROLES per project. Assumes projects exist (scored under 5.2). Focus only on whether each project has a clear owner with defined roles/responsibilities. Do NOT penalize for missing project descriptions or scope here — that is scored under 5.2. Clear single owner=1.0; ambiguous=0.75 max.",
     "6.2": "SCOPE: DETAILED project-level timelines. Strategy-level only=0.25.",
     "6.3": "SCOPE: QUANTIFIED budgets. 'Will seek funding'=NOT a budget. No figures=0.0.",
     "7.1": "SCOPE: DEDICATED risk section for IMPLEMENTATION risks. Challenges=diagnostic (Criteria 1). No risk section=0.0.",
@@ -783,12 +797,17 @@ def _build_sub_component_prompt(sub_info, classification, document_text, max_pag
         arabic_note = (
             "ARABIC DOCUMENT — LANGUAGE REQUIREMENTS:\n"
             "This document is in ARABIC. Read it directly in Arabic — do NOT say you cannot read it.\n"
-            "- 'evidence' field: Quote in ORIGINAL ARABIC exactly as it appears in the document.\n"
+            "- 'evidence' field: MUST contain ARABIC text from the document — NEVER English.\n"
+            "  WRONG: 'The document defines five strategic directions...' (English commentary)\n"
+            "  RIGHT: 'التوجهات الاستراتيجية: عمالة جاذبة للقطاع الخاص...' (actual Arabic from document)\n"
+            "  If the PDF extraction garbled the Arabic, reconstruct it as clean readable Arabic that matches\n"
+            "  EXACTLY what the original document says — same words, same structure. Do NOT paraphrase.\n"
             "- ALL OTHER FIELDS MUST BE IN ENGLISH — this is mandatory:\n"
             "  reasoning, recommendation, gap_to_next, evidence_summary, rubric_walkthrough\n"
             "- Do NOT write Arabic in any field other than 'evidence'.\n"
-            "- Present each Arabic quote on its own line with [PAGE X] citation.\n"
-            "- When quoting from Arabic tables, use pipe separators for row structure.\n\n"
+            "- Do NOT write English in the 'evidence' field.\n"
+            "- Present each Arabic evidence item on its own line with [PAGE X] citation.\n"
+            "- When presenting evidence from Arabic tables, use pipe separators for row structure.\n\n"
         )
 
     return (
@@ -806,7 +825,9 @@ def _build_sub_component_prompt(sub_info, classification, document_text, max_pag
         "7. Explain clearly: what was found, what rubric level it matches, what is needed for higher scores.\n"
         "8. gap_to_next: describe ALL gaps remaining to reach 1.0 (not just the next level).\n"
         f"9. Valid page range: 1 to {max_page}. Never reference PAGE 0.\n"
-        "10. Every quote in evidence MUST appear verbatim in the document. Never fabricate.\n\n"
+        "10. For Arabic documents, the 'evidence' field must contain ARABIC text only — never English.\n"
+        "    If the PDF extraction garbled the Arabic, reconstruct it as clean readable Arabic matching\n"
+        "    exactly what the document says (same words, same structure — not paraphrased). Never fabricate content.\n\n"
         "EVIDENCE FORMAT RULES:\n"
         "- Present evidence as a plain text string with quoted passages.\n"
         "- Each quote on its own line: \"quoted text\" [PAGE X]\n"
@@ -815,10 +836,10 @@ def _build_sub_component_prompt(sub_info, classification, document_text, max_pag
         "  Value1 | Value2 | Value3\n"
         "- NEVER use JSON objects or arrays inside the evidence field.\n"
         "- NEVER use curly braces {} in any text field.\n\n"
-        "TERMINOLOGY RULES:\n"
-        "- Project outcomes/deliverables → call them 'outcome' or 'deliverable', NEVER 'goal'\n"
+        "TERMINOLOGY RULES (NDS3 ALIGNED):\n"
+        "- Strategic outcomes → call them 'outcome' or 'strategic outcome', NEVER 'objective'\n"
+        "- Project deliverables → call them 'deliverable' or 'output', NEVER 'goal'\n"
         "- Risk mitigation actions → call them 'mitigation measure', NEVER 'initiative'\n"
-        "- Strategic objectives → call them 'objective' or 'strategic objective'\n"
         "- Use precise document structure terms: 'section', 'table', 'chapter', 'annex'\n\n"
         f'Respond ONLY with valid JSON in this exact structure:\n'
         f'{{"sub_component_id":"{sub_id}","sub_component_name":"{sub_name}",'
